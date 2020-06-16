@@ -1,0 +1,221 @@
+<!------------------------------------------------------------------------------------------------->
+<!--
+  Copyright 2020 Joel Falcou
+  Licensed under the terms of the Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)
+-->
+<!------------------------------------------------------------------------------------------------->
+
+<meta charset="utf-8" lang="en">
+<!------------------------------------------------------------------------------------------------->
+
+**An Array of Problems**
+    An Array of Solutions
+
+<small><em><span class="current-date"></span></em></small><br>
+Joel FALCOU
+<br>
+<br>
+<center><small>![](images/lri.jpg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
+<center>![](images/ccby40.png style="height: 0.7rem")</center>
+
+---
+<!------------------------------------------------------------------------------------------------->
+
+# Context
+
+---
+
+## Why do you even array ?
+
+<div style="columns:2;-webkit-columns:2;-moz-columns:2;column-gap:3em;-webkit-column-gap:3em;-moz-column-gap:3em">
+
+### Computations as a science pillar
+
+  * Simulations replaced experiments
+  * Fast computers are time machines
+  * Users are mainly scientists though
+
+### Enter the Matrix
+
+  * A nD-array must be **fast**
+  * A nD-array must be **easy to use**
+  * A nD-array must be **expressive**
+<br>
+
+<center>
+![](images/simulation_plasma.png style="height: 9rem")
+</center>
+</div>
+
+<center>
+!!! ERROR:
+    How to design such a pervasive data structure ?
+</center>
+
+---
+
+## Challenges
+
+### A proper nD-array must be **fast**
+  + Simulations replaced experiments in most fields
+  + Fast computers are real life time machines
+
+### A proper nD-array must be **easy to use**
+  + A proper nD-array must be **easy to use**
+  + A proper nD-array must be **expressive**
+
+### A proper nD-array must be **expressive**
+  + A proper nD-array must be **easy to use**
+  + A proper nD-array must be **expressive**
+
+---
+
+## Existing solutions
+
+### View/container
+
+
+### Expression-templates
+
+---
+
+## Our Stance
+
+### Concerns are to be separated
+  * Lazy evaluation
+  * nD-array handling
+  * Memory allocation
+  * Hardware support
+
+---
+
+## Our Stance
+
+### Concerns are to be separated
+  * Lazy evaluation
+  * nD-array handling
+  * Memory allocation
+  * Hardware support
+
+
+!!! ERROR: Solve each issues in its own software component
+    * Maximize re-usability
+    * No Monolith effect
+
+---
+
+## Our Stance
+
+### Concerns are to be separated
+  * Lazy evaluation
+      * **NuCOG** (see our CppCon 2019 talk)
+
+  * nD-array handling
+    * **Kiwaku** (to be released Q3 2020)
+
+  * Memory allocation
+    * **Kuai** (to be released Q3 2020)
+
+  * Hardware support
+      * SIMD: **E.V.E** (to be released Q3 2020)
+      * Threading:  **Unnamed Parallel Library** (tba)
+
+---
+
+## Our Stance
+
+### Concerns are to be separated
+  * Lazy evaluation
+      * **NuCOG** (see our CppCon 2019 talk)
+
+!!! Tip: nD-array handling
+    **Kiwaku**
+
+  * Memory allocation
+    * **Kuai** (to be released Q3 2020)
+
+  * Hardware support
+      * SIMD: **E.V.E** (to be released Q3 2020)
+      * Threading:  **Unnamed Parallel Library** (tba)
+
+---
+
+## Overview
+
+  * Basic elements of a nD array
+      * Extent
+      * Storage options
+      * Basic API
+
+  * Storage & Access
+      * Efficient indexing
+      * Subviews
+
+  * Processing nD Data
+      * Iterators or Ranges ?
+      * View-based algorithms
+
+---
+<!------------------------------------------------------------------------------------------------->
+
+# Basic elements
+
+---
+<!------------------------------------------------------------------------------------------------->
+
+# Storage & Access
+
+---
+<!------------------------------------------------------------------------------------------------->
+
+# Processing nD Data
+
+---
+<!------------------------------------------------------------------------------------------------->
+
+# Conclusion
+
+---
+
+## What did we achieved ?
+
+---
+
+## What's next ?
+
+---
+
+# Thanks for your attention !
+
+<!------------------------------------------------------------------------------------------------->
+<!-- Markdeep slides stuff -->
+<script>
+    markdeepSlidesOptions = {
+        aspectRatio: 16 / 9,
+        theme: 'reckons',
+        fontSize: 24,
+        diagramZoom: 1.0,
+        totalSlideNumber: false,
+        progressBar: true,
+        breakOnHeadings: false,
+        slideChangeHook: (oldSlide, newSlide) => {},
+        modeChangeHook: (newMode) => {}
+    };
+</script>
+<link rel="stylesheet" href="markdeep-slides/lib/markdeep-relative-sizes/1.09/relativize.css">
+<link rel="stylesheet" href="markdeep-slides/markdeep-slides.css">
+<script src="markdeep-slides/markdeep-slides.js"></script>
+
+<!-- Markdeep stuff -->
+<script>
+    markdeepOptions = {
+        tocStyle: 'none',
+        detectMath: false,
+        onLoad: function() {
+            initSlides();
+        }
+    };
+</script>
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep-slides/lib/markdeep/1.09/markdeep.min.js" charset="utf-8"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
