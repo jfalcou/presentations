@@ -149,22 +149,25 @@ Joel FALCOU
 
 ## Overview
 
-  * Basic elements of a nD array
-      * What's a nD array ?
-      * Storage options
-      * Basic API
+  * Basic elements of nD arrays
+      * Notion of shape and stride
+      * Notion of storage order
+      * Options combination
 
-  * Storage & Access
-      * Efficient indexing
-      * Subviews
+  * Flavor or arrays
+      * [ ] View
+      * [ ] Array
+      * [ ] Sub-indexing API
+      * [ ] Slice
 
   * Processing nD Data
-      * Iterators or Ranges ?
-      * View-based algorithms
+      * [ ] Iterators or Ranges ?
+      * [ ] View based algorithms
+      * [ ]   Work in progress
 
 ---
 <!------------------------------------------------------------------------------------------------->
-# Basic elements
+# Basic elements of nD arrays
 
 ---
 
@@ -182,15 +185,135 @@ Joel FALCOU
 
 ---
 
+## Defining an array shape
+
+### Context
+  * Arrays gather data in a n-dimensional grid
+  * The number of dimensions is supposed **known at compile time**
+  * The number of elements along each dimension may vary
+  * The number of elements along a given dimension may be known at compile time
+  * The initial ordering of those sizes is **domain specific** and **arbitrary**
+
+****************************************************************************************************
+*                       Dimension 0 : 4 elements
+*                      <----------------------->
+*                   ^  .-----+-----+-----+-----+
+*    Dimension 1 :  |  |  14 |  9  |  0  |  -1 |
+*    3 elements     |  '-----+-----+-----+-----+
+*                   |  |  4  |  0  | 10  |  7  |   -->  This is a 4 x 3 array
+*                   |  '-----+-----+-----+-----+
+*                   |  |  1  |  7  |  2  |  51 |
+*                   v  '-----+-----+-----+-----+
+****************************************************************************************************
+
+---
+
+## Defining an array shape
+
+### Objectives
+  * Define a type efficiently storing those informations
+  * Must be compatible with mixed bag of runtime and compile-time data
+
+### Classical version
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<std::ptrdiff_t... Dims> struct shape { /* array and/or tuple-like interface */ };
+
+// Mark-up to specify a dynamic size along a given dimension
+inline constexpr std::ptrdiff_t dynamic = -1;
+
+shape<4,3> fixed_4x3;                // Compile-time known shape
+shape<dynamic,dynamic> dynamic(4,3); // Runtime known shape
+
+shape< dynamic,dynamic,dynamic,dynamic
+      , dynamic,dynamic,dynamic,dynamic // Ughhhh
+      > dyn8d;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Defining an array shape
+
+### Issues
+  * Type interface is cringy for regular cases
+    * No one wants to use `array<float,shape<dynamic,dynamic,dynamic>>`
+    * No one should be forced to write lenghty type alias
+  * Implementation may or may not be efficient
+
+### Solution
+  * If we want compile-time value, we already have **`constexpr`**
+  * What if we just construct `constexpr` expr and be done
+  * Use the same type for both runtime and compile-time
+  * All thanks to C++20 **Non Type Template Parameter**
+
+---
+
+## Non Type Template Parameter
+
+### Definition
+  * Template parameter can contains non-types parameter
+  * Classic cases includes integral type, enumeration
+  * Less classic cases are pointers to functions or external linkage object, `nullptr`
+  * Accepted types were added in C++20
+
+### What can be NTTP in C++20
+  * All base classes and non-static data members are public and non-mutable
+  * The types of all bases classes and non-static data members are structural types
+  * Also includes possibly multi-dimensional array of such types.
+
+---
+
+## Non Type Template Parameter
+
+### Example
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+struct color
+{
+  char r,g,b;
+};
+
+template<color c> struct pixel
+{
+  // Some pixel-y API
+};
+
+pixel<color<255,0,0>> bright_red;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Array shapes as NTTP
+
+### Main idea
+  * Design an `shape` type only caring about storing runtime size
+  * Make it usable as an NTTP
+  * Provides helpers to smooth definition of array
+
+### Proposed interface
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+array<float,_3D>          x;                 // Unitialized 3D array with dynamic size
+array<float,_2D>          y( _2D(4,3) );     // 2D array with dynamic size of 4x3
+array<float,_4D(4,3,1,2)> z;                 // 3D array with  static size of 4x3x1x2
+
+array<float, extent[4]()[3]> a;              // Unitialized 3D array with size of 4x?x3
+array<float, extent[4]()[3]> b( _[1] = 6);   // 3D array with size of 4x6x3
+
+constexpr auto               s = extent()(); // 2D dynamic extent
+array<float, s[10]>          w;              // Unitialized 3D array with size of ?x?x10
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+---
+
 ## Let's build an array
 
 ### 1 Dimension case
   * Let $A$ be an array of $S_0$ elements
   * Let $I$ be the index of any element of $A$ with $I \in [B, B+S_0[$
   * Then memory offset to any element is defined as $\alpha(I) = I - B$
-
-!!! Tip:
-    A 1D array is defined by its base address and its base index
 
 ****************************************************************************************************
 *             .----+----+----*----*----+----+----.
@@ -244,14 +367,14 @@ Joel FALCOU
 *           .-----+-----+-----+-----+
 *  Indexes  |(1,0)|(2,0)|(3,0)|(4,0)|
 *           '-----+-----*-----*-----+
-*           |(1,1)|(2,1)|(3,1)|(4,1)|<-----------------------------+
-*           '-----+-----*-----*-----+                              |
-*           |(1,2)|(2,2)|(3,2)|(4,2)|                              |  ((4-0) + 3*(3-1)) = @(10)
-*           '-----+-----+-----+-----+                              |
-*                                                                  |
-*             .----+----+----+----+----+----+----+----+----+----*----*----.
+*           |(1,1)|(2,1)|(3,1)|(4,1)|<--------------+
+*           '-----+-----*-----*-----+               |
+*           |(1,2)|(2,2)|(3,2)|(4,2)|               |  ((1-0) + 3*(3-1)) = @(7)
+*           '-----+-----+-----+-----+               |
+*                                                   |
+*             .----+----+----+----+----+----+----*----*----+----+----+----.
 *  Addresses  | @0 | @1 | @2 | @3 | @4 | @5 | @6 | @7 | @8 | @9 | @10| @11|
-*             '----+----+----+----+----+----+----+----+----+----*----*----'
+*             '----+----+----+----+----+----+----*----*----+----+----+----'
 ****************************************************************************************************
 
 ---
@@ -269,9 +392,7 @@ Joel FALCOU
   * As soon as we have more than 1D, the notion of **dimension ordering** looks problematic
 
 !!! ERROR:
-    Which order is right ?
-    <br>
-    💢 I just wanted an array 💢
+    💢 Which order is right ? 💢
 
 ---
 
@@ -313,13 +434,13 @@ Joel FALCOU
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 template<std::integral Size, std::integral I0>
-auto ita_impl(Size const*, I0 i0) noexcept
+auto ita(Size const*, I0 i0) noexcept
 {
   return i0;
 }
 
 template<std::integral Size, std::integral I0, std::integral... Is>
-auto ita_impl(Size const* dims, I0 i0, Is... is) noexcept
+auto ita(Size const* dims, I0 i0, Is... is) noexcept
 {
   return i0 + *dims * indexes_to_address(dims++,is...)
 }
@@ -327,7 +448,7 @@ auto ita_impl(Size const* dims, I0 i0, Is... is) noexcept
 template<std::integral Size, std::size_t NDims, std::integral... Is>
 auto ita(std::array<Size,NDims> const& dims, Is... is) noexcept
 {
-  return ita_impls(dims.data(),is...)
+  return ita(dims.data(),is...)
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
@@ -339,7 +460,39 @@ auto ita(std::array<Size,NDims> const& dims, Is... is) noexcept
 ### By the power of ALGEBRA!!!
   * Let $A$ be an array of $S_0 \times \ldots \times S_{N-1}$ elements
   * Let $(I_0,\ldots,I_{N-1})$ be the index of any element of $A$
-  * Let assume base index are all 0s for slide space concerns
+
+\begin{equation}
+\Phi(\{I_0,I_1,I_2\},\{S_0,S_1,S_2\}) = I_0 + S_0 \times I_1 + + S_0 \times S_1 \times I_2
+\end{equation}
+
+  * This looks like a sum of product
+
+\begin{equation}
+\Phi(\{I_0,I_1,I_2\},\{S_0,S_1,S_2\}) = I_0 \times 1 + S_0 \times I_1 + + S_0 \times S_1 \times I_2
+\end{equation}
+
+  * aka, a dot product
+
+\begin{equation}
+\Phi(\{I_0,I_1,I_2\},\{S_0,S_1,S_2\}) = \{I_0,I_1,I_2\} \cdot \{1,S_0,S_0 \times S_1\}
+\end{equation}
+
+  * The $\{1,S_0,S_0 \times S_1\}$ are the **stride** of the array
+
+---
+
+## Storage & Access
+
+### Stride
+  * Let $A$ be an array of $S_0 \times \ldots \times S_{N-1}$ elements
+  * Its **strides** is defined as the partial product of its dimensions
+  * In most cases, the first stride is equal to 1, we call them **unit strides**
+
+### Proposed API
+  * Strides are constructible from a shape directly
+  * Strides needs to encode if they're unit or not
+  * Strides may be runtime, compile-time or both
+  * We will reuse the same API then for shape
 
 ---
 
