@@ -10,13 +10,17 @@
 
 **An Array of Problems**
     An Array of Solutions
-
-<small><em><span class="current-date"></span></em></small><br>
+<small><em><span class="current-date"></span></em></small>
+<br>
 Joel FALCOU
 <br>
+<small>
+with a side of Jean-Thierry Lapresté, Vincent Reverdy and Jules Pénuchot.
+</small>
 <br>
 <center><small>![](images/lri.jpg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
 <center>![](images/ccby40.png style="height: 0.7rem")</center>
+<small><small>Powered by Markdeep and Markdeep-Slides</small></small>
 
 ---
 <!------------------------------------------------------------------------------------------------->
@@ -62,11 +66,11 @@ Joel FALCOU
 
 ### A proper nD-array must be **easy to use**
   * Must be intuitive for numeric-savvy users
-  * Must protect user from performance anti-patterns
+  * Must protect users from performance anti-patterns
 
 ### A proper nD-array must be **expressive**
   * Numeric code should look numeric
-  * Combination of expressions should evaluates intuitively
+  * Combination of expressions should evaluate intuitively
 
 ---
 
@@ -149,23 +153,28 @@ Joel FALCOU
 
 ## Overview
 
-  * Basic elements of nD arrays
-      * Notion of shape and stride
+  * **Basic elements of nD arrays**
+      * Notion of shape
+      * Notion of stride
       * Notion of storage order
-      * Options combination
 
-  * Flavor or arrays
-      * [ ] View
-      * [ ] Array
+  * **Flavor or arrays**
+      * View
+      * Array
       * [ ] Sub-indexing API
-      * [ ] Slice
 
-  * Processing nD Data
+  * **Processing nD Data**
       * [ ] Iterators or Ranges ?
-      * [ ] View based algorithms
-      * [ ]   Work in progress
+      * [ ] nD-aware Algorithms
 
 ---
+
+<br><br><br><br><br><br><br>
+!!! ERROR: WARNING
+    This talks contains traces of maths. Be careful if you are intolerant or allergic
+
+---
+
 <!------------------------------------------------------------------------------------------------->
 # Basic elements of nD arrays
 
@@ -177,11 +186,12 @@ Joel FALCOU
   * We mostly deals with numeric types or aggregates
   * We assume that reallocation are few and far between
   * Memory of an array must be globally contiguous to appease the **Cache Gods**
+  * Please think of the kitten and don't do `std::vector<std::vector<...>>`
 
 ### Compile-time dictates that:
   * We want small type interfaces
   * We want to reuse memoized types as much as possible
-  * We want to benefits from C++17/20 templates goodies (`if constexpr`, concepts, `...`)
+  * We want to benefits from C++17/20 templates goodies (`if constexpr`, Concepts, `...`)
 
 ---
 
@@ -217,15 +227,15 @@ Joel FALCOU
 ### Classical version
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<std::ptrdiff_t... Dims> struct shape { /* array and/or tuple-like interface */ };
+template<std::ptrdiff_t... Dims> struct extent { /* array and/or tuple-like interface */ };
 
 // Mark-up to specify a dynamic size along a given dimension
 inline constexpr std::ptrdiff_t dynamic = -1;
 
-shape<4,3> fixed_4x3;                // Compile-time known shape
-shape<dynamic,dynamic> dynamic(4,3); // Runtime known shape
+extent<4,3> fixed_4x3;                // Compile-time known extent
+extent<dynamic,dynamic> dynamic(4,3); // Runtime known extent
 
-shape< dynamic,dynamic,dynamic,dynamic
+extent< dynamic,dynamic,dynamic,dynamic
       , dynamic,dynamic,dynamic,dynamic // Ughhhh
       > dyn8d;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -233,17 +243,17 @@ shape< dynamic,dynamic,dynamic,dynamic
 
 ---
 
-## Defining an array shape
+## Defining an array extent
 
 ### Issues
   * Type interface is cringy for regular cases
-    * No one wants to use `array<float,shape<dynamic,dynamic,dynamic>>`
+    * No one wants to use `array<float,extent<dynamic,dynamic,dynamic>>`
     * No one should be forced to write lenghty type alias
   * Implementation may or may not be efficient
 
 ### Solution
   * If we want compile-time value, we already have **`constexpr`**
-  * What if we just construct `constexpr` expr and be done
+  * What if we just construct an `constexpr` shape and be done
   * Use the same type for both runtime and compile-time
   * All thanks to C++20 **Non Type Template Parameter**
 
@@ -252,12 +262,11 @@ shape< dynamic,dynamic,dynamic,dynamic
 ## Non Type Template Parameter
 
 ### Definition
-  * Template parameter can contains non-types parameter
-  * Classic cases includes integral type, enumeration
+  * Template parameters can contain non-type parameters
+  * Classic cases include integral types, enumerations
   * Less classic cases are pointers to functions or external linkage object, `nullptr`
-  * Accepted types were added in C++20
 
-### What can be NTTP in C++20
+### What can be NTTP in C++20 ?
   * All base classes and non-static data members are public and non-mutable
   * The types of all bases classes and non-static data members are structural types
   * Also includes possibly multi-dimensional array of such types.
@@ -288,22 +297,22 @@ pixel<color<255,0,0>> bright_red;
 ## Array shapes as NTTP
 
 ### Main idea
-  * Design an `shape` type only caring about storing runtime size
+  * Design a `shape` type only caring about runtime size storage
   * Make it usable as an NTTP
   * Provides helpers to smooth definition of array
 
 ### Proposed interface
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-array<float,_3D>          x;                 // Unitialized 3D array with dynamic size
-array<float,_2D>          y( _2D(4,3) );     // 2D array with dynamic size of 4x3
-array<float,_4D(4,3,1,2)> z;                 // 3D array with  static size of 4x3x1x2
+array<float,_3D>             x;                   // Unitialized 3D array with dynamic size
+array<float,_2D>             y( of_shape(4,3) );  // 2D array with dynamic size of 4x3
+array<float,_4D(4,3,1,2)>    z;                   // 3D array with  static size of 4x3x1x2
 
-array<float, extent[4]()[3]> a;              // Unitialized 3D array with size of 4x?x3
-array<float, extent[4]()[3]> b( _[1] = 6);   // 3D array with size of 4x6x3
+array<float, extent[4]()[3]> a;                   // Unitialized 3D array with size of 4x?x3
+array<float, extent[4]()[3]> b( _[1] = 6);        // 3D array with size of 4x6x3
 
-constexpr auto               s = extent()(); // 2D dynamic extent
-array<float, s[10]>          w;              // Unitialized 3D array with size of ?x?x10
+constexpr auto               s = extent()();      // 2D dynamic extent
+array<float, s[10]>          w;                   // Unitialized 3D array with size of ?x?x10
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 ---
@@ -312,6 +321,7 @@ array<float, s[10]>          w;              // Unitialized 3D array with size o
 
 ### 1 Dimension case
   * Let $A$ be an array of $S_0$ elements
+  * Let $B$ be the first valid index of $A$
   * Let $I$ be the index of any element of $A$ with $I \in [B, B+S_0[$
   * Then memory offset to any element is defined as $\alpha(I) = I - B$
 
@@ -406,10 +416,34 @@ array<float, s[10]>          w;              // Unitialized 3D array with size o
 ### Storage order
   * Defines a **permutation** of logical dimensions
   * Specify which dimensions is actually **stored contiguously** in memory
-  * The notion that `C/C++` is row-major and `FORTRAN` is column major is a lie
+  * The notion that `C` is row major and `FORTRAN` is column major is not what you think it means
 
 !!! Tip: Conclusion
     The storage order of an array dimensions must be specified by the user
+
+---
+## Storage order
+
+### Storage order is a permutation
+  * Must be definable in a generic way w/r to number of dimensions
+  * We decide the storage order is known at compile-time
+  * Basic storage order can be provided
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<auto Permutation> struct storage_order
+{
+  template<int I>
+  static inline constexpr auto value = Permutation(I);
+};
+
+inline constexpr
+storage_order< [](auto d, auto) { return d; }> c_order = {};
+
+inline constexpr
+storage_order< [](auto d, auto) { return d>1 ? d : 1-d; }> fortran_order = {};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
@@ -434,21 +468,21 @@ array<float, s[10]>          w;              // Unitialized 3D array with size o
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 template<std::integral Size, std::integral I0>
-auto ita(Size const*, I0 i0) noexcept
+auto linearize_index(Size const*, I0 i0) noexcept
 {
   return i0;
 }
 
 template<std::integral Size, std::integral I0, std::integral... Is>
-auto ita(Size const* dims, I0 i0, Is... is) noexcept
+auto linearize_index(Size const* dims, I0 i0, Is... is) noexcept
 {
-  return i0 + *dims * indexes_to_address(dims++,is...)
+  return i0 + *dims * indexes_to_address(dims++,is...);
 }
 
 template<std::integral Size, std::size_t NDims, std::integral... Is>
-auto ita(std::array<Size,NDims> const& dims, Is... is) noexcept
+auto linearize_index(std::array<Size,NDims> const& dims, Is... is) noexcept
 {
-  return ita(dims.data(),is...)
+  return linearize_index(dims.data(),is...);
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
@@ -462,13 +496,13 @@ auto ita(std::array<Size,NDims> const& dims, Is... is) noexcept
   * Let $(I_0,\ldots,I_{N-1})$ be the index of any element of $A$
 
 \begin{equation}
-\Phi(\{I_0,I_1,I_2\},\{S_0,S_1,S_2\}) = I_0 + S_0 \times I_1 + + S_0 \times S_1 \times I_2
+\Phi(\{I_0,I_1,I_2\},\{S_0,S_1,S_2\}) = I_0 + S_0 \times I_1 + S_0 \times S_1 \times I_2
 \end{equation}
 
   * This looks like a sum of product
 
 \begin{equation}
-\Phi(\{I_0,I_1,I_2\},\{S_0,S_1,S_2\}) = I_0 \times 1 + S_0 \times I_1 + + S_0 \times S_1 \times I_2
+\Phi(\{I_0,I_1,I_2\},\{S_0,S_1,S_2\}) = I_0 \times 1 + S_0 \times I_1 + S_0 \times S_1 \times I_2
 \end{equation}
 
   * aka, a dot product
@@ -485,25 +519,247 @@ auto ita(std::array<Size,NDims> const& dims, Is... is) noexcept
 
 ### Stride
   * Let $A$ be an array of $S_0 \times \ldots \times S_{N-1}$ elements
-  * Its **strides** is defined as the partial product of its dimensions
+  * Its **strides** are defined as the cumulative product of its dimensions
   * In most cases, the first stride is equal to 1, we call them **unit strides**
 
 ### Proposed API
-  * Strides are constructible from a shape directly
-  * Strides needs to encode if they're unit or not
+  * Strides are constructible directly from a shape
+  * Strides needs to encode which values is known to be unit
   * Strides may be runtime, compile-time or both
-  * We will reuse the same API then for shape
+  * We will reuse the same API than for shape
 
 ---
 
+## Storage & Access
+
+### Stride-based implementation
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<std::integral Size, std::size_t NDims>
+auto linearize_index( std::array<Size,NDims> const& strides
+                    , std::array<Size,NDims> const& indexes
+                    ) noexcept
+{
+  return [&]<std::size_t... N>( std::index_sequence<N...> const& )
+  {
+    std::prtdiff_t i = 0;
+    return (i + ... + (strides[N]*indexes[N]));
+  }( std::make_index_sequence<NDims>{} );
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
 <!------------------------------------------------------------------------------------------------->
-# Storage & Access
+# Flavor or arrays
+
+  ---
+
+## Array, View ?
+
+### View
+  * Views wraps existing memory in a nD-array like interface
+  * Designed to be as small as possible in 'resting position'
+  * Never owns any memory
+
+### Array
+  * Arrays owns memory allocated via an allocator or on the stack
+  * Wraps said memory in a nD-array like interface
+  * Designed to be as small as possible in 'resting position'
+
+### Two sides of a same coins
+  * An Array is a View over the memory it owns
+  * Defines an efficient View leads to efficient Arrays
 
 ---
+
+## Options management
+
+### Point on the situation
+  * Extent is an option
+  * Stride is dependent on Extent but could be an option
+  * Storage order is an option
+  * Later on, allocator could be an option
+
+### Preventing the Policy Parameters Plight
+  * Variadics templates
+  * No set-order on options
+  * Reconstruct a set of options from within
+  * **Let's have a look ...**
+
+---
+
+## View
+
+### Let's gather some options
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename Type, auto... Options>
+struct view
+{
+  static constexpr auto all_settings    = settings(Options...);
+  static constexpr auto shape_settings  = shape<options::shape(all_settings)>{};
+  static constexpr auto stride_settings = options::stride(all_settings, shape_settings);
+
+  static constexpr bool is_dynamic      = shape_settings.is_dynamic;
+  static constexpr bool is_fully_static = shape_settings.is_fully_static;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+### Notes
+  * See how each options is still a NTTP
+  * The `options` namespace contains function to extract a given option via its tag
+  * Options can be used as default of the next one
+
+---
+
+## View
+
+### Compile-time issues
+  * Improve compile-time by separating concerns of template parameters
+  * Handling the memory depends only on `Type`
+  * Handling the data access depends only on shape and strides
+
+### Building a view like a LEGO
+  * Use the **SCARY** techniques T.61: Do not over-parameterize members (SCARY)
+  * Split the main class in small base class with less template parameters
+  * Design a `view_span<Type>` to handle the memory
+  * Design a `view_access<Shape, Stride>` to handle the data access
+
+---
+
+## View
+
+### SCARY Implementation
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename Type, auto... Options>
+struct  view
+      : detail::view_access < shape<options::shape(settings(Options...))>{}
+                            , options::stride ( settings(Options...)
+                                              , shape<options::shape(settings(Options...))>{}
+                                              )
+                            >
+      , detail::view_span<Type*>
+{
+  static constexpr auto all_settings    = settings(Options...);
+  static constexpr auto shape_settings  = shape<options::shape(all_settings)>{};
+  static constexpr auto stride_settings = options::stride(all_settings, shape_settings);
+
+  // ...
+
+  using span_base       = detail::view_span<Type*>;
+  using access_base     = detail::view_access<shape_settings, stride_settings>;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## View
+
+### Internals of `view_span`
+  * `view_span` is a simple wrapper aroudn a pointer
+  * Supports changes of pointee
+  * Natively supports pointers and pointers to const
+
+### Internals of `view_access`
+  * `view_access` wraps a Shape and a Stride
+  * Centralize all index related computation
+  * Provides the **`linearize`** function
+  * Optimized via **`requires`** clauses
+  * **Let's have a look**
+
+---
+
+## Array
+
+### A trivial definition
+  * Array owns memory
+  * Memory can be dynamically allocated (via an `Allocator`)
+  * Memory can live on the stack
+
+### What do we need to add
+  * Provide a wrapper around allocator bound memory
+  * Provide a wrapper around automatic storage memory
+  * Exploit the type and value of Shape to decide where the data live
+  * **Let's have a look**
+
+---
+
+## Sub-indexing API
+
+### Let's share the cake !
+  * Extracting sub-views from array/view is a very common pattern
+  * It should be easy to write
+  * It should cost nothing (or almost nothing)
+
+### A Good Model : Matlab
+---
+
+## Sub-indexing API
+
+---
+
+## Sub-indexing API
+
+---
+
+## Sub-indexing API
+
+---
+
+## Slices
+
+---
+
+## Slices
+
+---
+
+## Slices
+
+---
+
 <!------------------------------------------------------------------------------------------------->
 # Processing nD Data
 
+___
+
+## Iterator model
+
 ---
+
+## Iterator model
+
+---
+
+## Range model
+
+---
+
+## Range model
+
+---
+
+
+## nD-aware algorithms
+
+---
+
+
+## nD-aware algorithms
+
+---
+
+## nD-aware algorithms
+
+---
+
 <!------------------------------------------------------------------------------------------------->
 # Conclusion
 
@@ -511,9 +767,29 @@ auto ita(std::array<Size,NDims> const& dims, Is... is) noexcept
 
 ## What did we achieved ?
 
+### nD array-like containers
+  * Use a proper representation
+  * Minimizes 'resting size'
+  * Flexible API and type API
+  * Sub-array come for free
+
+### nD Algorithms
+  * Recursive descent of dimensions as a basic skeleton
+  * Demonstration of usability in simple scenarios
+  * Code generation QoI
+
 ---
 
 ## What's next ?
+
+### Features
+  * Walkthrough adaptors
+  * Interaction with E.V.E and Kuai
+  * Benchmarks of more complex use cases
+
+### Toward a Release
+  * Works to be done on documentations
+  * Release planned before the Falls
 
 ---
 
