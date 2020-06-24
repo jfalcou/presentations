@@ -197,7 +197,7 @@ with a side of Jean-Thierry Lapresté, Vincent Reverdy and Jules Pénuchot.
 
 ### Context
   * Arrays gather data in a n-dimensional grid
-  * The number of dimensions is supposed **known at compile time**
+  * The number of effective dimensions is supposed **known at compile time**
   * The number of elements along each dimension may vary
   * The number of elements along a given dimension may be known at compile time
   * The initial ordering of those sizes is **domain specific** and **arbitrary**
@@ -307,15 +307,15 @@ pixel<color<255,0,255,0>> no_violet;
 ### Proposed interface
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-array<float,_3D>             x;                   // Unitialized 3D array with dynamic size
-array<float,_2D>             y( of_shape(4,3) );  // 2D array with dynamic size of 4x3
-array<float,_4D(4,3,1,2)>    z;                   // 4D array with  static size of 4x3x1x2
+array<float,_3D>             x;                  // Uninitialized 3D array with dynamic size
+array<float,_2D>             y( of_shape(4,3) ); // 2D array with dynamic size of 4x3
+array<float,_4D(4,3,1,2)>    z;                  // 4D array with  static size of 4x3x1x2
 
-array<float, extent[4]()[3]> a;                   // Unitialized 3D array with size of 4x?x3
-array<float, extent[4]()[3]> b( axis<1> = 6);     // 3D array with size of 4x6x3
+array<float, extent[4]()[3]> a;                  // Uninitialized 3D array with size of 4x?x3
+array<float, extent[4]()[3]> b( axis<1> = 6);    // 3D array with size of 4x6x3
 
-constexpr auto               s = extent()();      // 2D dynamic extent
-array<float, s[10]>          w;                   // Unitialized 3D array with size of ?x?x10
+constexpr auto               s = extent()();     // 2D dynamic extent
+array<float, s[10]>          w;                  // Uninitialized 3D array with size of ?x?x10
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 ---
@@ -397,7 +397,7 @@ array<float, s[10]>          w;                   // Unitialized 3D array with s
   * Let $A$ be an array of $S_0 \times S_1$ elements
   * Let $(I_0,I_1)$ be the index of any element of $A$
   * $I_0 \in [B_0, B_0+S_0[, I_1 \in [B_1, B_1+S_1[$
-  * $\alpha(I_0,I_1) = (I_0 - B_0) + S_0*(I_1-B_1)$
+  * $\alpha(I_0,I_1) = (I_1 - B_1) + S_1*(I_0-B_0)$
 
 ### What do we notice ?
   * The ordering of **logical dimensions** is arbitrary
@@ -514,7 +514,7 @@ auto linearize_index(std::array<Size,NDims> const& dims, Is... is) noexcept
 \Phi(\{I_0,I_1,I_2\},\{S_0,S_1,S_2\}) = \{I_0,I_1,I_2\} \cdot \{1,S_0,S_0 \times S_1\}
 \end{equation}
 
-  * The $\{1,S_0,S_0 \times S_1\}$ are the **stride** of the array
+  * $\{1,S_0,S_0 \times S_1\}$ contains the **strides** of the array
 
 ---
 
@@ -542,14 +542,16 @@ auto linearize_index(std::array<Size,NDims> const& dims, Is... is) noexcept
   * Let $(B_0,\ldots,B_{N-1})$ be the first valid index of any element of $A$
 
 \begin{equation}
-\scriptsize\Phi(\{I_i,\ldots\},\{S_i,\ldots\},\{B_i,\ldots\}) = \{I_i-B_i,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
+\begin{aligned}
+\scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\},\{B_0,\ldots\}) = \{I_0-B_0,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
 \\
-\scriptsize\Phi(\{I_i,\ldots\},\{S_i,\ldots\},\{B_i,\ldots\}) = \{I_i,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
-- \{B_i,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
+\scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\},\{B_0,\ldots\}) = \{I_0,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
+- \{B_0,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
 \\
-\scriptsize\Phi(\{I_i,\ldots\},\{S_i,\ldots\},\{B_i,\ldots\}) = \Phi(\{I_i,\ldots\},\{S_i,\ldots\}) - \Phi(\{B_i,\ldots\},\{S_i,\ldots\})
+\scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\},\{B_0,\ldots\}) = \Phi(\{I_0,\ldots\},\{S_0,\ldots\}) - \Phi(\{B_0,\ldots\},\{S_0,\ldots\})
 \\
-\scriptsize\Phi(\{I_i,\ldots\},\{S_i,\ldots\},\{B_i,\ldots\}) = \Phi(\{I_i,\ldots\},\{S_i,\ldots\}) - \beta_N
+\scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\},\{B_0,\ldots\}) = \Phi(\{I_0,\ldots\},\{S_0,\ldots\}) - \beta_N
+\end{aligned}
 \end{equation}
 
   * As base indexes are **`constexpr`**, $\beta_N$ can be precomputed as an offset to the data pointer
@@ -731,7 +733,7 @@ struct  view
   * Subset of data along a dimension with a step: `m(1:3:15,y)`
   * All data along a dimension: `m(:,y)`
   * A single index: `m(4)`
-  * Boolean indexing: `m( a < 0)`
+  * Boolean indexing: `m(a < 0)`
   * Indirect indexing: `m(b)`
 
 ---
@@ -748,7 +750,7 @@ struct  view
   * **Subset of data along a dimension with a step: `m(1:3:15,y)`**
   * **All data along a dimension: `m(:,y)`**
   * **A single index: `m(4)`**
-  * Boolean indexing: `m( a < 0)`
+  * Boolean indexing: `m(a < 0)`
   * Indirect indexing: `m(b)`
 
 ---
@@ -765,16 +767,16 @@ struct  view
   * `_(a,b)` implies a contiguous subset
   * `_(a,s,b)` implies a non-contiguous subset
   * `_` implies a contiguous subset
-  * `i` implies a single value
+  * `4` or any integers imply a single value
 
 ---
 
 ## Sub-indexing API
 
 ### Slicing algorithm - Part 1
-  * Each slicer compute the size, stride and starting point along a given dimension
+  * Each slicer computes the size, stride and starting point along a given dimension
   * Each slicer models a given Concept that represent how the slicing affect the view
-  * Statically detect unit or fully contiguous slices
+  * Each slicer statically detects unit or fully contiguous slices
 
 Slicer        |  Unit | Contiguous |
 --------------|:-----:|:----------:|
@@ -790,9 +792,9 @@ Slicer        |  Unit | Contiguous |
 ## Sub-indexing API
 
 ### Slicing algorithm - Part 2
-  * The slice properties dictate the type of sub-view extracted
-  * Fully Contiguous slices generates `view`
-  * Non Fully Contiguous slices generates `slices`
+  * The slice's properties dictate the type of sub-view extracted
+  * Fully Contiguous slices generate `view`
+  * Non Fully Contiguous slices generate `slice`
   * `slice` acts like `view` but limits further sub-slicing
 
 <script type="preformatted">
@@ -846,11 +848,11 @@ slice slice::operator()(Indexer... is) requires( sizeof...(Indexer) >= Dims );
 *     M                                           V = M(_, _(0,3,5))
 *  ┌─────┬ ─ ─ ┬ ─ ─ ┬─────┬ ─ ─ ┐
 *  |(1,0)|     ·     |(4,0)|     ·
-*  '─────┼ ─ ─ ┼ ─ ─ ┼─────┼ ─ ─ ┤                V.shape()  = [3 2]
+*  ├─────┼ ─ ─ ┼ ─ ─ ┼─────┼ ─ ─ ┤                V.shape()  = [3 2]
 *  |(1,1)|     ·     |(4,1)|     ·  ----------->  V.stride() = [1 9]
-*  '─────┼ ─ ─ ┼ ─ ─ ┼─────┼ ─ ─ ┤                V.data     = @(M(1,0))
+*  ├─────┼ ─ ─ ┼ ─ ─ ┼─────┼ ─ ─ ┤                V.data     = @(M(1,0))
 *  |(1,2)|     ·     |(4,2)|     ·
-*  '─────+ ─ ─ ┴ ─ ─ +─────+ ─ ─ ┘
+*  └─────┴ ─ ─ ┴ ─ ─ ┴─────┴ ─ ─ ┘
 *
 ****************************************************************************************************
 
@@ -867,11 +869,11 @@ slice slice::operator()(Indexer... is) requires( sizeof...(Indexer) >= Dims );
 *     M                                           V = M(_, _(0,3,5))
 *  ┌─────┬ ─ ─ ┬ ─ ─ ┬─────┬ ─ ─ ┐                ┌─────┬─────┐
 *  |(1,0)|     ·     |(4,0)|     ·                |(1,0)|(2,0)|
-*  '─────┼ ─ ─ ┼ ─ ─ ┼─────┼ ─ ─ ┤                ├─────┼─────┤
+*  ├─────┼ ─ ─ ┼ ─ ─ ┼─────┼ ─ ─ ┤                ├─────┼─────┤
 *  |(1,1)|     ·     |(4,1)|     ·  ----------->  |(1,1)|(2,1)|
-*  '─────┼ ─ ─ ┼ ─ ─ ┼─────┼ ─ ─ ┤                ├─────┼─────┤
+*  ├─────┼ ─ ─ ┼ ─ ─ ┼─────┼ ─ ─ ┤                ├─────┼─────┤
 *  |(1,2)|     ·     |(4,2)|     ·                |(1,2)|(2,2)|
-*  '─────+ ─ ─ ┴ ─ ─ +─────+ ─ ─ ┘                └─────┴─────┘
+*  └─────┴ ─ ─ ┴ ─ ─ ┴─────┴ ─ ─ ┘                └─────┴─────┘
 *
 ****************************************************************************************************
 
