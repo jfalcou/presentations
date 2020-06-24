@@ -188,7 +188,7 @@ with a side of Jean-Thierry Lapresté, Vincent Reverdy and Jules Pénuchot.
 
 ### Compile-time dictates that:
   * We want small type interfaces
-  * We want to reuse memoized types as much as possible
+  * We want to reuse memorized types as much as possible
   * We want to benefits from C++17/20 templates goodies (`if constexpr`, Concepts, `...`)
 
 ---
@@ -244,9 +244,9 @@ extent< dynamic,dynamic,dynamic,dynamic
 ## Defining an array extent
 
 ### Issues
-  * Type interface is cringy for regular cases
+  * Type interface is awkward for regular cases
     * No one wants to use `array<float,extent<dynamic,dynamic,dynamic>>`
-    * No one should be forced to write lenghty type alias
+    * No one should be forced to write lengthy type alias
   * Implementation may or may not be efficient
 
 ### Solution
@@ -534,7 +534,6 @@ auto linearize_index(std::array<Size,NDims> const& dims, Is... is) noexcept
 
 ---
 
-
 ## Interaction with base index
 
 ### By the power of ALGEBRA!!!
@@ -693,7 +692,7 @@ struct  view
 
 ### `view_span`
   * Is a simple wrapper around a pointer
-  * Supports changes of pointee
+  * Supports changes of pointed data
   * Supports pointers and pointers to const
 
 ### `view_access`
@@ -806,7 +805,7 @@ view  view::operator() (Indexer... is) requires( (contiguous<Indexer,N> && ...) 
 slice array::operator()(Indexer... is) requires(!(contiguous<Indexer,N> && ...) );
 slice view::operator() (Indexer... is) requires(!(contiguous<Indexer,N> && ...) );
 
-// Slice can only be sliced with at mmost as much dimensions
+// Slice can only be sliced with at most as much dimensions
 slice slice::operator()(Indexer... is) requires( sizeof...(Indexer) >= Dims );
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
@@ -838,7 +837,7 @@ slice slice::operator()(Indexer... is) requires( sizeof...(Indexer) >= Dims );
 ## Sub-indexing API
 
 ### Slicing algorithm - Part 3
-  * **The new size is used to generate a vew with custom stride**
+  * **The new size is used to generate a view with custom stride**
   * **This view pointer is computed from the first indexable position**
   * No copy, only a new computation of shape and stride
   * Views can be safely copied with no overhead
@@ -859,7 +858,7 @@ slice slice::operator()(Indexer... is) requires( sizeof...(Indexer) >= Dims );
 ## Sub-indexing API
 
 ### Slicing algorithm - Part 3
-  * The new size is used to generate a vew with custom stride
+  * The new size is used to generate a view with custom stride
   * This view pointer is computed from the first indexable position
   * **No copy, only a new computation of shape and stride**
   * **Views can be safely copied with no overhead**
@@ -880,13 +879,45 @@ slice slice::operator()(Indexer... is) requires( sizeof...(Indexer) >= Dims );
 
 ## nD-aware algorithms
 
+### When to use iterators/range
+  * Array can support both
+  * View/Slice can't because of their potential non-contiguity
+  * We need a new model
+
+### What do we want
+  * Ensure proper storage order compliant traversal
+  * Hide the recursive nature of traversal
+  * Allow for complex indexing patterns
+  * Use a proper notion of iteration space
+
 ---
 
 ## nD-aware algorithms
 
----
+### A nD `for_each`
 
-## nD-aware algorithms
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ c++
+template<class Func, class D0> constexpr void for_each(Func c, D0 d0)
+{
+  for(std::ptrdiff_t i0=0;i0<d0;++i0) c(i0);
+}
+
+template<class Func, class D, class... Ds>constexpr void for_each(Func c, D d0, Ds... ds)
+{
+  for_each( [c,d0](auto... is) { for(std::ptrdiff_t i0=0;i0<d0;++i0) c(i0,is...); }, ds... );
+}
+
+template<class Func, auto Shaper>
+constexpr void for_each(Func c, shape<Shaper> const& shp)
+{
+  return [&]<std::size_t... N>(std::index_sequence<N...> const&)
+  {
+    return detail::for_each(c, get<N>(shp)... );
+  }( std::make_index_sequence<shape<Shaper>::static_size>{});
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
@@ -913,9 +944,9 @@ slice slice::operator()(Indexer... is) requires( sizeof...(Indexer) >= Dims );
 ## What's next ?
 
 ### Features
-  * Walkthrough adaptors:
-    * Peano traversal
-    * Hilbert traversal
+  * Walk through adapters:
+    * Peano, Hilbert traversal
+    * Complex subspace traversal
   * Interaction with EVE and Kuai
     * Usable as a SIMD data provider
     * Support for polymorphic allocator
