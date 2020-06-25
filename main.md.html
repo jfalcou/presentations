@@ -110,7 +110,7 @@ with a side of Jean-Thierry Lapresté, Vincent Reverdy and Jules Pénuchot.
   * Hardware support
 
 
-!!! ERROR: Solve each issues in its own software component
+!!! ERROR: Solve each issue in its own software component
     * Maximize re-usability
     * No Monolith effect
 
@@ -189,7 +189,7 @@ with a side of Jean-Thierry Lapresté, Vincent Reverdy and Jules Pénuchot.
 ### Compile-time dictates that:
   * We want small type interfaces
   * We want to reuse memorized types as much as possible
-  * We want to benefits from C++17/20 templates goodies (`if constexpr`, Concepts, `...`)
+  * We want to benefit from C++17/20 templates goodies (`if constexpr`, Concepts, `...`)
 
 ---
 
@@ -227,7 +227,7 @@ with a side of Jean-Thierry Lapresté, Vincent Reverdy and Jules Pénuchot.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 template<std::ptrdiff_t... Dims> struct extent { /* array and/or tuple-like interface */ };
 
-// Mark-up to specify a dynamic size along a given dimension
+// Mark-up to specify a size which is known at runtime
 inline constexpr std::ptrdiff_t dynamic = -1;
 
 extent<4,3> fixed_4x3;                // Compile-time known extent
@@ -418,7 +418,7 @@ array<float, s[10]>          w;                  // Uninitialized 3D array with 
 
 ### Storage order
   * Define a **permutation** of logical dimensions
-  * Specify which dimensions is actually **stored contiguously** in memory
+  * Specify which dimensions are actually **stored contiguously** in memory
   * The notion that `C` is row major and `FORTRAN` is column major is not what you think it means
 
 !!! Tip: Conclusion
@@ -543,14 +543,13 @@ auto linearize_index(std::array<Size,NDims> const& dims, Is... is) noexcept
 
 \begin{equation}
 \begin{aligned}
-\scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\},\{B_0,\ldots\}) = \{I_0-B_0,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
+\scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\},\{B_0,\ldots\}) &= \scriptsize\{I_0-B_0,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
 \\
-\scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\},\{B_0,\ldots\}) = \{I_0,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
-- \{B_0,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
+ &= \scriptsize\{I_0,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\} - \{B_0,\ldots\} \cdot \{1,\ldots,\Pi^{N-1}_{i=0} S_i\}
 \\
-\scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\},\{B_0,\ldots\}) = \Phi(\{I_0,\ldots\},\{S_0,\ldots\}) - \Phi(\{B_0,\ldots\},\{S_0,\ldots\})
+ &= \scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\}) - \Phi(\{B_0,\ldots\},\{S_0,\ldots\})
 \\
-\scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\},\{B_0,\ldots\}) = \Phi(\{I_0,\ldots\},\{S_0,\ldots\}) - \beta_N
+ &= \scriptsize\Phi(\{I_0,\ldots\},\{S_0,\ldots\}) - \beta_N
 \end{aligned}
 \end{equation}
 
@@ -701,7 +700,7 @@ struct  view
   * Wraps a Shape and a Stride
   * Centralizes all index related computation
   * Provides the **`linearize`** function
-  * Optimized via **`requires`** clauses
+  * Is optimized via **`requires`** clauses
   * **Let's have a look**
 
 ---
