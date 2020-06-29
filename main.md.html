@@ -349,13 +349,65 @@ constexpr_for<range(-5,+5)>( [](auto index)                 // C++20 NTTP
 
 ## Expression Templates
 
-TODO: Parler de la separation of concern + NuCOG
+### EDSL shortcomings
+  * Most EDSL terminals act as both storage and tree spawner
+  * Most EDSL don't support sub-expression building in template contexts
+
+### Implications
+  * Issue with copy vs deep-copy of ASTs
+  * AST traversal is complex
+  * Compile-time are bad
+
+### A Better Approach
+  * DSL in which storage and expression are separated
+  * Make symbolic expression first class citizen within the library
+  * Support transformation of expressions
 
 ---
 
 ## Expression Templates
 
-TODO: Parler des EDSL via string litteral
+### EDSL for symbolic formula
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ c++ linenumbers
+// Basic formula
+auto f = 6.67408e-11 * x_*y_ / ( z_ * z_ );
+auto g = 6.67408e-11 * $(mass1)*$(mass2) / ($(distance)*$(distance));
+
+// Variable renaming - g, g2 and f are equivalent
+auto g2 = f( x_ = $(mass1), y_ = $(mass2), z_ = $(distance));
+
+// Partial evaluation - g_10 is still a formula
+auto g_10 = g( $(distance) = 10. );
+
+// Mix different formulas together - k requires 6 variables
+auto k = g + f;
+
+// Full evaluations
+auto qx = g( $(mass1) = 3.5, $(distance) = 10., $(mass2) = 7.6);
+auto rx = g_10( $(mass1) = 3.5, $(mass2) = 7.6);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Expression Templates
+
+### Literal Strings as EDSL API
+  * Add arbitrary syntax to the language
+  * Support any kind of API style
+  * Have Greater interoperability with existing code
+  * Can be syntaxically enforced by Concepts
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ c++ linenumbers
+// Build an expression by CT parsing of LaTeX
+auto f   = "\sqrt[3]{\frac{x^3+y^3}{2}}\vec{v}"_tex;
+
+auto res = f(x_ = 4, y_ = real(8), v_ = vector({1, 2, 3, 4}));
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
