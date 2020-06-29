@@ -1,300 +1,396 @@
+<!------------------------------------------------------------------------------------------------->
+<!--
+  Copyright 2020 Joel Falcou
+  Licensed under the terms of the Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)
+-->
+<!------------------------------------------------------------------------------------------------->
+
 <meta charset="utf-8" lang="en">
+<!------------------------------------------------------------------------------------------------->
 
-**Building presentation slides with markdeep**
-    Acrobat Reader? I hardly know her!
+**The future of computation**
+    the C++ way
+<small><em><span class="current-date"></span></em></small>
+<br>
+Joel FALCOU
+<br>
+<br>
+<center><small>![](images/lri.jpg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
+<center>![](images/ccby40.png style="height: 0.7rem")</center>
+<small><small>Powered by Markdeep and Markdeep-Slides</small></small>
 
-<small><em><span class="current-date"></span></em></small><br>
-Noah Doersing
+---
+<!------------------------------------------------------------------------------------------------->
+
+## The Paradigm Change in Science
+
+<div style="columns:2;-webkit-columns:2;-moz-columns:2;column-gap:3em;-webkit-column-gap:3em;-moz-column-gap:3em">
+
+### From Experiments to Simulations
+
+  * Simulations are part of the **Scientific Method**
+  * Scientific Computing is Faster Research
+
+### The Parallel Hell
+
+  * The Great Heat Wall
+  * Heterogeneous systems are the norm
+  * **The Free Lunch** is over
+<br>
+<br>
+<br>
+
+<center>
+![](images/simulation_plasma.png style="height: 9rem")
+</center>
+</div>
+
+<center>
+!!! ERROR Computing is  a tool for scientist.
+    The real challenge in HPC is solving the Expressiveness/Efficiency Conundrum
+</center>
 
 ---
 
-# Getting started
+## The Great Gap
+
+<center>
+![](images/problematic.png style="height: 17rem")
+</center>
+
+<center>
+!!! ERROR The Expressiveness/Efficiency Conundrum
+    As parallel systems complexity grows, the expressiveness gap turns into an ocean
+</center>
 
 ---
 
-## Setup
+## But Why on Earth using C++ ?
 
-To start building your own slides with the help of Markdeep:
+### Objectives
+  1. Be non-disruptive
+  2. Domain driven optimizations
+  3. Provide intuitive API for the user
+  4. Support a wide architectural landscape
+  5. Be efficient
 
-1. Clone this repository, or download a zipped version of it from https://github.com/doersino/markdeep-slides/archive/master.zip.
-
-    ```bash
-    $ git clone https://github.com/doersino/markdeep-slides
-    ```
-
-2. Replace the contents of `demo.md.html` with whatever you want your slides to say, but keep the first line and the final lines intact; they're making the magic happen!
-
----
-
-## Formatting
-
-Use **horizontal lines to separate slides**:
-
-```text
-slide 1
----
-slide 2
----
-slide 3
-```
-
-If you want to use a horizontal line *on* one of your slides, write `<hr class="ignore">`.
-
-<hr class="ignore">
-
-See?
+### Which languages ?
 
 ---
 
-## Shortcuts
+## But Why on Earth using C++ ?
 
-Press...
+### Objectives
+  1. Be non-disruptive
+  2. Domain driven optimizations
+  3. Provide intuitive API for the user
+  4. Support a wide architectural landscape
+  5. Be efficient
 
-* <kbd>Space</kbd>, <kbd>↓</kbd>, <kbd>→</kbd> or <kbd>PgDn</kbd> to go to the next slide,
-* <kbd>↑</kbd>, <kbd>←</kbd> or <kbd>PgUp</kbd> to go to the previous slide,
-* <kbd>F</kbd>, <kbd>F5</kbd> or <kbd>Esc</kbd> to toggle fullscreen/presentation mode,
-* <kbd>.</kbd> to turn the screen black (and back again),
-* <kbd>n</kbd> to open a window with your presenter notes (more on the next slide),
-* <kbd>t</kbd> to start (or dismiss) a timer shown in the presenter notes window, and
-* a slide number, e.g. <kbd>1</kbd> <kbd>7</kbd>, followed by <kbd>Enter</kbd>, to jump to that slide.
-
-These little presenter gadgets should work no problem.
-
----
-
->>> Presenter notes...
->>>
->>> * ...can contain lists!
->>> * How neat.
->>>
->>> You can use *arbitrary* Markdeep constructs in here (as long as they're allowed in blockquotes)!
->>>
->>> ![](screenshot.jpg style="width: 10rem")
-
-
-## Presenter notes
-
-Press <kbd>n</kbd> to open a **window with the presenter notes** and a basic clock. They will update as you move between slides. All **shortcuts work** even when the presenter notes window is focused.
-
-Presenter notes **support Markdeep** and can be **defined using three nested blockquotes**, like so:
-
-```text
->>> Don't just read what's *on* the slides out loud, that's boring.
->>> Here's some additional information:
->>> * A monad is just a monoid in the category of endofunctors.
-```
-
-In draft mode, presenter notes are shown below each slide.
+### Which languages ?
+  1. Use FORTRAN, C++, Python
+  2. Use C++, Python
+  3. Use C++, Python
+  4. Use FORTRAN, C++, C
+  5. Use FORTRAN, C++, C
 
 ---
 
-## Printing to PDF
+## But Why on Earth using C++ ?
 
-You can **export a PDF version** of your slides by simply **printing it to a PDF file** using your browser's built-in tools.
+### Objectives
+  1. Be non-disruptive
+  2. Domain driven optimizations
+  3. Provide intuitive API for the user
+  4. Support a wide architectural landscape
+  5. Be efficient
 
-In my experience, this **works best in Chrome** as it respects the `@page` CSS selector properly.
-
-!!!
-    In the print modal, set "Margins" to "None" and make sure to keep the "Background graphics" option enabled.
+### Which languages ?
+  1. Use FORTRAN, **C++**, Python
+  2. Use **C++**, Python
+  3. Use **C++**, Python
+  4. Use FORTRAN, **C++**, C
+  5. Use FORTRAN, **C++**, C
 
 ---
 
-# Details
+## But Why on Earth using C++ ?
+
+### A lively language
+  * C++ started a new live after C++11
+  * The momentum of C++14,17,20 is going strong
+  * Errors of the past has been fixed
+  * New tools emerged from academic and industrial use
+
+### A structuring language
+  * B. Stroustrup describes C++ as an infrastructure language
+  * C++ is a library building languages
+
+!!! TIP Libraries are languages
+    We can solve the Conundrum by designing Libraries as Languages
 
 ---
 
-## Customization
+<!------------------------------------------------------------------------------------------------->
 
-Make sure to define your options *before* loading `markdeep-slides.js` (only some options shown here, `README.md` explains the rest):
+# The Code Is Data!
 
-```
-<script>
-markdeepSlidesOptions = {
-    aspectRatio: 16 / 9,      // aspect ratio of your slides
-    theme: 'simple',          // theme – "simple", "deepsea", "serif" or path of a stylesheet
-    fontSize: 28,             // base font size, relative to slide display size
-    progressBar: true         // show a presentation progress bar on each slide?
-};
+---
+
+## C++ Meta-programming - A Sorry State of Affairs
+
+### C++ Code generation
+  * Preprocessor based : Boost.PP, Chaos
+  * External code generator : usually very business oriented
+  * The Dreaded Meta-Programming
+
+### Meta-programming in C++ 03
+  * Rely on templates functions and classes
+  * Embed type or code fragment into reusable components
+  * Chant *Cthulhu R’lyeh wgah’nagl fhtagn* to get it working
+  * Wait ages and ages and ages of compile-time
+
+---
+
+## A Problem of Perspective
+
+### The Fundamental Errors of pre-C++14 TMP
+  * Focus on type
+  * Play around silly syntax
+  * Low level abstractions
+
+### What to do then ???
+  * Focus on code fragment generation/assembly
+  * **Meta-programming is automation of code writing**
+  * Let's have a quick look at other languages
+
+---
+
+## Meta-programming with OCAML
+
+### Embeds "code fragment" as object
+  * Separate the meta-program from the generated code
+  * Code is put in boxes and generated at will
+  * Follow OCAML type system for type safety
+
+### Three main tools:
+  * Creation of code fragment via Brackets
+  * Injection of code via Escape
+  * Execution via Run
+
+---
+
+## Meta-programming with OCAML
+
+### Sample meta-programming
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ scheme linenumbers
+# let a = .< 1+2 >.;;
+   -> val a : int code = .<1+2>.
+
+# let b = .< 3 * .~a >.;;
+   -> val b : int code = .< 3 *(1+2)>.
+
+# let c = .!b;;
+   -> val c : int = 9
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
-```
 
-You can tweak the themes via CSS variables – take a look at their CSS files.
-
----
-
-## Including media
-
-Images should always be given a width, height, or both in `rem`:
-
-```
-![](screenshot.jpg style="height: 12rem")
-```
-
-Embedded videos can receive the same parameters.
-
-!!! error: Important
-    If you specify width or height in `px`, your media **won't scale properly** based on your screen size – you don't want postage-stamp-sized images if you happen to present on a 4K screen, do you?
+### Notes:
+  * There is a thin syntax layer around code blocks
+  * Code fragments have a type
+  * Everything is a data
 
 ---
 
-## Themeing
+## Nu-Meta-programming with C++
 
-If your want to *build your own theme*, here are some helpful tips:
+### Potential translation in C++
+  * Code fragment ==> lambda functions
+  * Injection ==> inlined function calls
+  * Code replication ==> variadic templates
+  * Execution ==> Compilation
 
-* Make sure that all `font-size`s, `margin`s, `padding`s, `width`s and `height`s are **defined in terms of `rem` or `em`**. This enables your elements to scale properly depending on screen size.
-* Use CSS `var`iables to keep your theme configurable (take a look at the existing themes to see some examples).
-* Keep in mind that the presenter notes will inherit your theme's styles.
-* Download any webfonts to your computer. *You don't want to rely on wifi being available when and where you'll present – that's just asking for trouble.*
-
----
-
-# Some neat Markdeep features
-
----
-
-### Math:
-
-$$
-{\hat O_p} = \frac 1 {C_p} \sum_{{q \in \mathcal N_p}} {w(p, q)} {O_q}
-$$
-
-### Diagrams:
-
-************************************************************
-*  A      1      2     4                        8          *
-*   *----->o<---->o<----o-----------.            ◍         *
-*                 ^     ^            |           ^         *
-*                 |     |            |           |         *
-*                 v     |            v           |         *
-*                 ◌<--->*<---->o---->*---->o---->o<---->*  *
-*                3     B      5     C     6     7      D   *
-************************************************************
+### Additional Support
+  * Code fragment selection using `if constexpr`
+  * Reinforced typing using Concepts and `requires`
+  * Code computation performed via `constexpr` functions
+  * Use NTTP to carry abstraction in the compile-time steps
 
 ---
 
-***************************************************************************
-*                    ____                      *                          *
-*                   |    |_____.---.           |                          *
-*                   o     _____|    )----------)-------.                  *
-*                  / \   |     '---'           |     __|__                *
-*                 /___\  |                     |     \   /                *
-*                   |    '-------------.       |      \ /                 *
-* A ----------------'                  |       |       o                  *
-*      .-------------------.     o-----)-------'       |                  *
-*      |                   |___.---.   |               |___.---.          *
-* B ---*---.__.---.         ___|    )--*--.__..---.     ____)   )----- Y  *
-*           __|    o----*--'   '---'    ______))   )---'   '---'          *
-* C -------'  '---'     |              |     ''---'                       *
-*                       |              o                                  *
-*                       |             / \                                 *
-*                       |            /___\                                *
-*                       |              |                                  *
-*                       '--------------'                                  *
-***************************************************************************
+## Nu-Meta-programming with C++
 
-Take a look at the [Markdeep docs](https://casual-effects.com/markdeep/features.md.html#basicformatting/diagrams) for more example diagrams.
+### Additional Support
+  * Code fragment selection using `if constexpr`
+  * Reinforced typing using Concepts and `requires`
+  * Code computation performed via `constexpr` functions
+  * Use NTTP to carry abstraction in the compile-time steps
+
+### Sample Use Cases
+  * Functions composition
+  * Code unrolling
+  * Iteration over tuple member  (Boost.Hana)
+  * String parsing at compile-time (CTRE)
 
 ---
 
-### Quotes, endnotes[^test] and citations:
+## Nu-Meta-programming with C++
 
-> This is a blockquote. It ain't much, but what did you expect? It's just a blockquote. Nothing more, nothing less.
->
+### Compile-time replication of code
 
-If you wrap quotation marks around quotes, they get real fancy:
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ c++ linenumbers
+struct range
+{
+  int base, end, count = end-base;
+};
 
-> "We make our world significant[^moretest] by the courage of our questions and by the depth of our answers."
->
->      -- Carl Sagan [#Sagan80]
+template<auto Range, typename Code> constexpr void constexpr_for(Code c)
+{
+  [&c]<int... N>( std::integer_sequence<int, N...> )
+  {
+    (c( std::integral_constant<int,Range.base+N>{} ), ...); // C++17 fold expression
+  }( std::make_integer_sequence<int, Range.count>{});
+}
 
----
-
-### Admonitions:
-
-!!!
-    This is an admonition.
-
-!!! error: Red admonition
-    Another one, but it's red. Must be danger ahead!
-
-!!! warning: This is ~~America~~ a warning
-    Yellowish. Not quite as much danger, I guess.
-
-!!! tip: Green
-    Now the 🚦 is complete.
-
-
+constexpr_for<range(-5,+5)>( [](auto index)                 // C++20 NTTP
+{
+  std::cout << index << "\n";
+});
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
-### Code with line numbers and a caption:
+## Application
 
-```Haskell linenumbers
-cgenExpr l (K.TElemR e1 e2 ty) = do
-    a <- cgenExpr l e1
-    b <- cgenExpr l e2
-    liput l b $ Right e2
-    b' <- toVoidPtr (K.typeOf e2) b
-    c <- callCbits voidPtr "kltollvm_row_elemr" [a, toOperand $ tyValueToC $ K.typeOf e2, b']
+### Metaprogramming GEMV
 
-    -- Make sure to return the correct value (previous function call returns a
-    -- void pointer).
-    fromVoidPtr ty c
-```
-[Listing [hask]: An out-of context piece of Haskell code.]
-
-It's possible to reference listings: Consider Listing [hask].
-
----
-
-### Nested lists:
-
-* You can...
-    * ...arbitrarily...
-        - ...nest...
-        - ...lists.
-    * This...
-      1. ...works with numbered...
-      2. ...lists...
-          1. ...too!
-    * You can also use pluses:
-        + See!
-        - Minuses work too.
+****************************************************************************************************
+*
+*                          GEMV Throughput on AARCH64 ARM processor
+*
+*               |
+*           15 -+-┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+*               |
+*               |
+*           12 -+-        ▒    ▒    ▒                             ▉ OpenBLAS
+*               |         ▒    ▒    ▒
+*    GB/s   10 -+-┄┄┄┄┄┄┄┄▒┄┄┄▉▒┄┄┄▉▒┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄              ▒ C++14 TMP
+*               |         ▒   ▉▒   ▉▒   ▉
+*               |    ▒   ▉▒   ▉▒   ▉▒   ▉▒
+*               |    ▒   ▉▒   ▉▒   ▉▒   ▉▒
+*               |   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒
+*           5  -+-┄┄▉▒┄┄┄▉▒┄┄┄▉▒┄┄┄▉▒┄┄┄▉▒┄┄┄▉┄┄┄┄┄┄
+*               |   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒   ▉
+*               |   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒
+*               |   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒
+*               |   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒   ▉▒
+*           0  -+---+----+----+----+----+----+----+---▶
+*                   64  128  256  512  1024 2048 4096
+*
+*                              Vector size
+*
+****************************************************************************************************
 
 ---
 
-### Videos (images work too):
+<!------------------------------------------------------------------------------------------------->
 
-![Figure [fig:dave]: Better than most podcasts.](https://www.youtube.com/watch?v=ij9KXgiyDAc)
-
----
-
-### Notes and references:
-
-These have been defined a couple of slides further up.
-
-[#Sagan80]: Sagan, C. (1980). Cosmos.
-
-[^test]: This is an endnote.
-
-[^moretest]: This is another endnote. It contains a lot of words: *Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.*
+# Languages as Libraries
 
 ---
 
-## Content that goes past the end of a slide is cut off, so be careful!
+## The Elusive Domain Specific Language
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmodtempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit essecillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+### Domain Specific Languages
+  * Non-Turing complete declarative languages
+  * Solve a single type of problems
+  * Express **what** to do instead of **how** to do it
+  * E.g: SQL, Make, Matlab, $\ldots$
+
+### Embedded Domain Specific Languages (EDSL) [Abrahams 2004]
+  * EDSLs are simply a libraries that meets the same criteria than a DSL
+  * EDSLs live in a general purpose **host** language
+  * Using **Meta-programming** is one way to design such libraries
+  * More specifically, **Expressions Templates**
 
 
+---
 
+## Expression Templates
+
+<div style="columns:2;-webkit-columns:2;-moz-columns:2;column-gap:3em;-webkit-column-gap:3em;-moz-column-gap:3em">
+
+### Principles
+
+  * Relies on extensive operator overloading
+  * Carries semantic information around code fragment
+  * Introduces DSLs without disrupting dev. chain
+
+### Benefits
+
+  * Generic implementation becomes self-aware of optimizations
+  * API abstraction level is arbitrary high
+  * Boilerplates reduced to acceptable level via tools
+<br>
+<br>
+<br>
+<br>
+
+<center>
+![](images/ast-edsl.png style="height: 13rem")
+</center>
+</div>
+
+---
+
+## Expression Templates
+
+TODO: Parler de la separation of concern + NuCOG
+
+---
+
+## Expression Templates
+
+TODO: Parler des EDSL via string litteral
+
+---
+
+<!------------------------------------------------------------------------------------------------->
+# Conclusion
+
+---
+
+## C++ as a HPC infrastructure language
+
+### Don't write code, write code's generator
+  * Complexity of hardware and specifications rise
+  * One can't really write everything by hand
+  * Meta-programming offers an alternative
+  * **Automate code generation to eradicate complexity and errors**
+
+### Explore, Be Creative
+  * C++17+ TMP is very flexible
+  * Type based EDSL are a valuable backbone
+  * String based EDSL is a thing to pursue
+  * Next: code generation via Introspection
+
+---
+
+# Thanks for your attention !
+
+<!------------------------------------------------------------------------------------------------->
 <!-- Markdeep slides stuff -->
 <script>
     markdeepSlidesOptions = {
         aspectRatio: 16 / 9,
-        theme: 'simple',
-        fontSize: 28,
+        theme: 'reckons',
+        fontSize: 22,
         diagramZoom: 1.0,
-        totalSlideNumber: false,
+        totalSlideNumber: true,
         progressBar: true,
         breakOnHeadings: false,
         slideChangeHook: (oldSlide, newSlide) => {},
