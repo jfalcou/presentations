@@ -55,15 +55,43 @@ Joel FALCOU
 
 ---
 
+## A Slice of Elegance
+
+### [A Portable `simd_strlen`](https://godbolt.org/z/qezheM)
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+std::size_t simd_strlen(unsigned char const* s)
+{
+  eve::aligned_ptr aligned_s = eve::previous_aligned_address(s);
+
+  eve::wide     cur     = eve::unsafe(eve::load)(aligned_s);
+  auto          ignore  = eve::ignore_first(s - aligned_s.get());
+  std::optional match   = eve::first_true[ignore](cur == 0);
+
+  while (!match)
+  {
+    aligned_s += wide::static_size;
+    cur = eve::unsafe(eve::load)(aligned_s);
+    match = eve::first_true(cur == 0);
+  }
+
+  return static_cast<std::size_t>(aligned_s.get() + *match - s);
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
 ## The Message of this Talk
 
 ### Library design is two-sided
   * User-facing API must be compelling to use
   * Dev-facing API must enable fast development
 
-### How do three standards change a library?
-  * Straightforward new language features
-  * New idioms and combination thereof
+### How do three standards change the library?
+  * New language features
+  * New idioms
 
 ### How the vision of a long term project changes?
   * The importance of user API perception
@@ -72,6 +100,8 @@ Joel FALCOU
 ---
 
 # Type Interface
+
+<center>![](images/camembert.png style="height: 8rem")</center>
 
 ---
 
@@ -127,14 +157,14 @@ Joel FALCOU
 template<typename Type, typename Cardinal, typename ABI = ...> struct wide;
 
 // Usage
-pack<int,fixed<8>> x( [](auto i, auto c) { return 1+i; });
+wide<int,fixed<8>> x( [](auto i, auto c) { return 1+i; });
 
 std::cout << x.get(x.size()-1) << "\n";
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
 ### Specifics
-  * `fixed` is a **Cardinal type** and provides the static check of size
+  * `fixed` is a **Cardinal type** and asserts size are SIMD compatible
   * `fixed` provides internal types to generically compute an upcast or downcast Cardinal
   * Other types are provided to discriminate between scalar and SIMD register of size 1
   * The explicit nature of `get` makes you pause to think about it
@@ -146,18 +176,19 @@ std::cout << x.get(x.size()-1) << "\n";
 ### Assessing the Situation
   * Users have been trained to recognize API by name
   * If it looks like an array, why can't I use it as such?
-  * Our mistake was to be to close to the actual representation in the type API
+  * Our mistake was to fall into the Uncanny Valley of APIs
 
 !!! note: Our Findings
     * API are not just about **adding** but also about **removing**.
-    * Don't over mimic existing type if there is "ifs" and "buts"
+    * Don't over mimic existing type if there are "ifs" and "buts"
     * Prefer semantic-rich types to simple integral constant if possible
-    * Make your users think about what they are doing by making potentially costly or
-      dangerous operations overly long to type
+    * *"Make APIs that are easy to use correctly and hard to use incorrectly"*, Scott Meyers
 
 ---
 
 # Functions & Objects
+
+<center>![](images/beaufort.png style="height: 8rem")</center>
 
 ---
 
@@ -165,7 +196,7 @@ std::cout << x.get(x.size()-1) << "\n";
 
 ### Objectives
   * SIMD implementation in E.V.E need to be reusable
-  * Overload should be possible over architecture, IS then types
+  * Overload should be possible over architecture, instruction sets, types
   * Adding special case for specific optimization must be allowed
   * Easy-to-use, Easy-to-discover API
 
@@ -181,14 +212,14 @@ std::cout << x.get(x.size()-1) << "\n";
 
 ### Objectives
   * SIMD implementation in E.V.E need to be reusable
-  * Overload should be possible over architecture, IS then types
+  * Overload should be possible over architecture, instruction sets, types
   * Adding special case for specific optimization must be allowed
   * Easy-to-use, Easy-to-discover API
 
 ### New Design
   * **[C++11/17]** E.V.E uses (inline) Callable Object that calls specific optimized functions
   * **[C++11]** Use object as type parameters
-  * **[C++11]** New API due to adding members of said Callable
+  * **[C++11]** New API due to adding members to said Callable
   * **[C++14]** Higher-order functions as decorators
 
 ---
@@ -282,7 +313,7 @@ std::cout << x.get(x.size()-1) << "\n";
   x = exp(y);                   // Regular exp call
   a = saturated(add)(b,c);      // Addition with saturation
   x = pedantic(exp)(y,z);       // exp with special cases for denormals/infinites
-  x = numeric(min)(x,y);        // minimum without tacking NaNs into account
+  x = numeric(min)(x,y);        // minimum without taking NaNs into account
   x = raw(sqrt)(x);             // sqrt with fast implementation, no error checking
 
   y = diff(pedantic)(exp)(x);   // differential, pedantic exponential
@@ -370,7 +401,6 @@ auto add(wide<T,N,ABI> lhs, wide<T,N,ABI> rhs)
        if constexpr( is_aggregated_v<ABI> ) return aggregate(add,lhs,rhs);
   else if constexpr( is_emulated_v<ABI>   ) return map(add,lhs,rhs);
 }
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -379,8 +409,15 @@ auto add(wide<T,N,ABI> lhs, wide<T,N,ABI> rhs)
 ## Implementation of Architecture-Optimized Callables
 
 ### The Issues
+  * SIMD instruction sets are widly divergent even for a given ABI
+  * Types, micro-architectures, etc all play a role
+  * How to be able to write the most efficient code with the least overloads?
 
 ### `if constexpr` for intrinsics selection
+  * Use SPY to select instructon set at compile-time
+  * Provide a type -> enumeration function to **categorize** types
+  * Categories are build as bitfield encoding base type, size and cardinal
+  * Nest `if constexpr` according to the optimisation we want to obtain
 
 ---
 
@@ -426,13 +463,11 @@ template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T
     * Don't be shy to try amping up the Object side of Function Objects
     * Looking forward `std::tag_invoke`
 
-<center>
-### Let's have a look at [the end result](https://godbolt.org/z/qezheM)
-</center>
-
 ---
 
-# Advanced API Design
+# Other API Decisions
+
+<center>![](images/nectaire.png style="height: 8rem")</center>
 
 ---
 
@@ -444,22 +479,60 @@ template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T
   * We could not wait for the users to discover them
 
 ### Example: register swizzling
-  * SIMD registers can have their content shuffled
-  * Sometimes, swizzle is the only way to get optimal performances
+  * SIMD registers can have their content moved around
   * But each instructions sets has different rules for this
   * How to have users not being left out by not using the correct swizzle ?
+  * *"Library design for compilation time"* as put by Victor Zverovich
 
 ---
 
 ## Abstraction for Optimizations
 
+### Sample Swizzle
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+wide<float, fixed<4>> x;
+
+// Direct index pattern -- not very portable
+auto rx = x[ pattern<3,2,1,0> ];
+
+// Parametric swizzle - use constexpr lambda
+auto rx2 = x[ as_pattern{ [](auto i, auto c) { return c-i-1; }}];
+
+// Parametric swizzle - using pre-defined pattern
+auto rx2 = x[ reverse_n<4> ];
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+### Benefits
+  * **[C++20]** Use a `consteval` mapping of patterns to implementation
+  * No need to remember which tricks work for which architecture
+  * Compile-time is mitigated by using `consteval` functions over template classes
+
 ---
 
-## Abstraction for Optimizations
+# Conclusion
+
+<center>![](images/reblochon.jpg style="height: 8rem")</center>
 
 ---
 
-# There is Stilton to do!
+## Time to taste!
+
+### Impact on code - Before
+  * Peak Boost.SIMD was 650K LOC
+  * Average compile-time for unit tests: 10-12s
+  * API was heterogeneous and prone to errors
+
+### Impact on code - After
+  * EVE is 54K LOC for equivalent features
+  * Average compile-time for unit tests: 3-4s
+  * API streamlined and simplified
+
+### The Heavy Hitters
+  * **[C++20]** Concepts
+  * **[C++17]** `if constexpr`
 
 ---
 
