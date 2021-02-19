@@ -181,7 +181,7 @@ std::cout << x.get(x.size()-1) << "\n";
 !!! note: Our Findings
     * API are not just about **adding** but also about **removing**.
     * Don't over mimic existing type if there are "ifs" and "buts"
-    * Prefer semantic-rich types to simple integral constant if possible
+    * Prefer semantic-rich types to simple integral constants if possible
     * *"Make APIs that are easy to use correctly and hard to use incorrectly"*, Scott Meyers
 
 ---
@@ -218,7 +218,7 @@ std::cout << x.get(x.size()-1) << "\n";
 
 ### New Design
   * **[C++11/17]** E.V.E uses (inline) Callable Object that calls specific optimized functions
-  * **[C++11]** Use object as type parameters
+  * **[C++11]** Use objects as type parameters
   * **[C++11]** New API due to adding members to said Callable
   * **[C++14]** Higher-order functions as decorators
 
@@ -263,7 +263,7 @@ std::cout << x.get(x.size()-1) << "\n";
   wide<int> a,b,c;
 
   c = c + 4;                      // c = c+4
-  c = add[a<b](c,4);              // c = c+4 when a<b
+  c = add[a<b](c,4);              // c = c+4 when a<b else c
 
   c = c * b;                      // c = c*b
   c = mul[ignore_first(2)](c,b);  // c = c*b except for first 2 values
@@ -316,7 +316,7 @@ std::cout << x.get(x.size()-1) << "\n";
   x = numeric(min)(x,y);        // minimum without taking NaNs into account
   x = raw(sqrt)(x);             // sqrt with fast implementation, no error checking
 
-  y = diff(pedantic)(exp)(x);   // differential, pedantic exponential
+  y = diff(pedantic)(sqrt)(x);   // differential, pedantic square root
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   </script>
 
@@ -480,7 +480,7 @@ template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T
 
 ### Example: register swizzling
   * SIMD registers can have their content moved around
-  * But each instructions sets has different rules for this
+  * But each instruction set has different rules for this
   * How to have users not being left out by not using the correct swizzle ?
   * *"Library design for compilation time"* as put by Victor Zverovich
 
