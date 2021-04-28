@@ -146,41 +146,80 @@ Joel FALCOU - Vincent REVERDY
 
 ## Why designing API is hard
 
-### The Information Asymmetry
-  * Donner autant d'info que possible au compilo tout en cachant la complexité pour les users
-  * VINCENT
+### Exploiting Compile Time Information
+  * Compilers need high-level information to enable high-quality optimization
+  * Users must be able to pass such information directly from the source
+
+### Source of Implementation Leaks
+  * Untyped values as template parameters
+  * Rigid template API that limits library's evolution and usability
+  * Improper compile-time/runtime separation of concern
 
 ---
 
-## User centric API
+## Why designing API is hard
 
-### Objectives
-* VINCENT
----
+### Exploiting Compile Time Information
+  * Compilers need high-level information to enable high-quality optimization
+  * Users must be able to pass such information directly from the source
 
-## The Room&lt; `Elephant` &gt;
+### Source of Implementation Leaks
+  * Untyped values as template parameters
+  * Rigid template API that limits library's evolution and usability
+  * Improper compile-time/runtime separation of concern
 
-### Issue with template-heavy API
-* VINCENT
+###  Examples
+  * `-1` as a dynamic size tag for **`std::span`**/**`std::mdspan`**
+  * **<script type="preformatted">`Eigen::Matrix<typename Scalar, int Rows, int Cols>`</script>**
+  * Passing allocator as type+value instead of pure value
 
 ---
 
 ## Back to Generative Programming
 
-### IMAGE ??
-* VINCENT
+<center>
+  ![](images/demral.png style="height: 20rem")
+</center>
 
 ---
 
-## Long Term Goals
+## First principles design
 
-### Better API design
-  * VINCENT
+### Performances dictate that:
+  * We mostly deals with numeric types or aggregates
+  * We assume that reallocation are few and far between
+  * Memory of an array must be globally contiguous to appease the **Cache Gods** [^kitten]
+  * Memory footprints for empty/compile-time sized array must be minimal
 
-### Example: A Better `mdpsan` API
-  * VINCENT
+### Usability dictates that:
+  * We want to express as much optimization opportunities as possible
+  * We want users to be able to do so without unnecessary hurdle
+  * Ownership should be trivial to specify
+  * We want to benefit from C++17/20 templates goodies (`if constexpr`, Concepts, `...`)
+
+
+[^kitten]: Please think of the kitten and don't do `std::vector<std::vector<...>>`
 
 ---
+
+## Layout of the talks
+
+### Runtime components handling
+  * Full runtime components should be handled at runtime
+  * No need for type-based specification
+  * **Our choice: Opaque types**
+
+### Optimizations specifications:
+  * Array and view behavior options must be trivial to setup
+  * Users should have access to an intuitive option passing API
+  * **Our choice: Keyword parameters**
+
+### Compile-time/Runtime Barrier
+  * Compile-time options must have a rich semantic
+  * **Out choice : Non Type Template Parameters**
+
+---
+
 <!------------------------------------------------------------------------------------------------->
 <!--
   PART 1 : OPAQUE TYPES
@@ -256,19 +295,56 @@ Joel FALCOU - Vincent REVERDY
 
 ---
 
-## EDSL-generated NTTP as extensible option pack
+## Defining an array shape
 
-### SECTION
+### Context
+  * Arrays gather data in a n-dimensional grid
+  * The number of effective dimensions is supposed **known at compile time**
+  * The number of elements along each dimension may vary
+  * The number of elements along a given dimension may be known at compile time
+  * The initial ordering of those sizes is **domain specific** and **arbitrary**
+
+****************************************************************************************************
+*                       Dimension 0 : 4 elements
+*                      <----------------------->
+*                   ^  .-----+-----+-----+-----+
+*    Dimension 1 :  |  |  14 |  9  |  0  |  -1 |
+*    3 elements     |  '-----+-----+-----+-----+
+*                   |  |  4  |  0  | 10  |  7  |   -->  This is a 4 x 3 array
+*                   |  '-----+-----+-----+-----+
+*                   |  |  1  |  7  |  2  |  51 |
+*                   v  '-----+-----+-----+-----+
+****************************************************************************************************
 
 ---
 
-## Application: Full-blown md-array like class
+## Array shapes as NTTP
 
-### SECTION
+### Main idea
+  * Design a `shape` type only caring about runtime size storage
+  * Make it usable as an NTTP
+  * Provides helpers to smooth definition of array
+
+### Proposed interface
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+array<float,_3D>             x;                  // Uninitialized 3D array with dynamic size
+array<float,_2D>             y( of_shape(4,3) ); // 2D array with dynamic size of 4x3
+array<float,_4D(4,3,1,2)>    z;                  // 4D array with  static size of 4x3x1x2
+
+array<float, extent[4]()[3]> a;                  // Uninitialized 3D array with size of 4x?x3
+array<float, extent[4]()[3]> b( _[1] = 6 );      // 3D array with size of 4x6x3
+
+constexpr auto               s = extent()();     // 2D dynamic extent
+array<float, s[10]>          w;                  // Uninitialized 3D array with size of ?x?x10
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
 
 <!------------------------------------------------------------------------------------------------->
 <!--
-  PART 1 : CONCLUSION
+  PART 4 : CONCLUSION
 -->
 <!------------------------------------------------------------------------------------------------->
 
