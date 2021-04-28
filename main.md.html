@@ -21,6 +21,121 @@ Joel FALCOU - Vincent REVERDY
 
 ---
 
+# Some Context
+
+---
+<!------------------------------------------------------------------------------------------------->
+<!--
+  INTRODUCTION
+-->
+<!------------------------------------------------------------------------------------------------->
+
+## Why do we even array ?
+
+<div style="columns:2;-webkit-columns:2;-moz-columns:2;column-gap:3em;-webkit-column-gap:3em;-moz-column-gap:3em">
+
+### Computations as a science pillar
+
+  * Simulations replaced experiments
+  * Fast computers are time machines
+  * Users are mainly scientists though
+
+### Enter the Matrix
+
+  * A nD-array must be **fast**
+  * A nD-array must be **easy to use**
+  * A nD-array must be **expressive**
+<br>
+
+<center>
+![](images/simulation_plasma.png style="height: 9rem")
+</center>
+</div>
+
+<center>
+!!! ERROR:
+    How to design such a pervasive data structure ?
+</center>
+
+---
+
+## Challenges
+
+### A proper nD-array must be **fast**
+  * Must be usable with modern hardware (SIMD, GPGPU, ...)
+  * Abstractions should not hinder performances
+
+### A proper nD-array must be **easy to use**
+  * Must be intuitive for numeric-savvy users
+  * Must protect users from performance anti-patterns
+
+### A proper nD-array must be **expressive**
+  * Numeric code should look numeric
+  * Combination of expressions should evaluate intuitively
+
+---
+
+## Existing solutions
+
+### View/container
+  * `std::vector`/`std::array`
+  * `std::span`
+  * `std::mdspan`
+  * `Boost.QVM`
+
+### Expression-templates
+  * `Blitz++`
+  * `Eigen`
+  * `Armadillo`
+  * `Blaze`
+  * `NT²`
+
+---
+
+## Why are those solutions not adequate ?
+
+### Concerns are to be separated
+  * Lazy evaluation
+  * nD-array handling
+  * Memory allocation
+  * Hardware support
+
+---
+
+## Why are those solutions not adequate ?
+
+### Concerns are to be separated
+  * Lazy evaluation
+  * nD-array handling
+  * Memory allocation
+  * Hardware support
+
+
+!!! ERROR: Solve each issue in its own software component
+    * Maximize re-usability
+    * No Monolith effect
+
+---
+
+## Why are those solutions not adequate ?
+
+### Concerns are to be separated
+  * Lazy evaluation
+  * nD-array handling
+  * Memory allocation
+  * Hardware support
+
+
+!!! ERROR: Solve each issue in its own software component
+    * Maximize re-usability
+    * No Monolith effect
+
+<center>
+  **Today we will care about the nD-array handling issues**
+</center>
+
+---
+
 ## Why designing API is hard
 
 ### Contents
@@ -35,7 +150,7 @@ Joel FALCOU - Vincent REVERDY
 
 ## The Room<Elephant>
 
-  ### Issue with template-heavy API
+### Issue with template-heavy API
 
 ---
 
@@ -46,6 +161,11 @@ Joel FALCOU - Vincent REVERDY
 ### Example: A Better `mdpsan` API
 
 ---
+<!------------------------------------------------------------------------------------------------->
+<!--
+  PART 1 : OPAQUE TYPES
+-->
+<!------------------------------------------------------------------------------------------------->
 
 # Tips #1 - Opaque Types
 
@@ -68,6 +188,11 @@ Joel FALCOU - Vincent REVERDY
 ### SECTION
 
 ---
+<!------------------------------------------------------------------------------------------------->
+<!--
+  PART 2 : KEYWORD PARAMETERS
+-->
+<!------------------------------------------------------------------------------------------------->
 
 # Tips #2 - Keyword Parameters
 
@@ -85,13 +210,16 @@ Joel FALCOU - Vincent REVERDY
 
 ---
 
-## Application: Disambuigation of size/value constructors
+## Application: Disambiguation of size/value constructors
 
 ### SECTION
 
 ---
-
-
+<!------------------------------------------------------------------------------------------------->
+<!--
+  PART 3 : GENERIC NTTP
+-->
+<!------------------------------------------------------------------------------------------------->
 # Tips #3 - Generic NTTP
 
 ---
@@ -119,7 +247,11 @@ Joel FALCOU - Vincent REVERDY
 ### SECTION
 
 ---
-
+<!------------------------------------------------------------------------------------------------->
+<!--
+  PART 1 : CONCLUSION
+-->
+<!------------------------------------------------------------------------------------------------->
 ## Conclusion
 
 ---
