@@ -183,36 +183,6 @@ Joel FALCOU - Vincent REVERDY
   * **<script type="preformatted">`Eigen::Matrix<typename Scalar, int Rows, int Cols>`</script>**
   * Passing allocator as type+value instead of pure value
 
----
-
-## Back to Generative Programming
-
-
-****************************************************************************************************
-*
-*     .---------------.         .-----------------------.          .----------------.
-*    | Domain Specific |       |  Generative  Component  |        |     Concrete     |
-*    |   Description   |       |                         |        |  Implementation  |
-*    |                 |       |                         |        |                  |
-*    |        o        |       |       .----------.      |        |      .--..-.     |
-*    |       / \     --+-------+----->| Translator +-----+--------+---> /|A | X |    |
-*    |      *   o      |       |       '----^-----'      |        |     \|  |'-'     |
-*    |     /|\         |       |            |            |        |      +--+        |
-*    |    o * o        |       |            v            |        |      |▒▒|\       |
-*    |                 |       |      .-----------.      |        |      |▒▒|/       |
-*     '---------------'        |     |             |     |        |      '--'        |
-*                              |  .-+   Parametric  +--. |         '----------------'
-*                              | |      Components      ||
-*                              |  '-+             +----' |
-*                              |     |           |       |
-*                              |      '---------'        |
-*                              |                         |
-*                               '-----------------------'
-*
-*
-****************************************************************************************************
----
-
 ## First principles design
 
 ### Performances dictate that:
@@ -253,9 +223,6 @@ Joel FALCOU - Vincent REVERDY
 <!------------------------------------------------------------------------------------------------->
 <!--
   PART 1 : OPAQUE TYPES
-
-  https://www.quick-bench.com/q/1iaRpOVaWtiV7egJLIfWVNSM1hU
-  https://godbolt.org/z/ee37YWqf1
 -->
 <!------------------------------------------------------------------------------------------------->
 
@@ -292,33 +259,33 @@ Joel FALCOU - Vincent REVERDY
   * `std::any`, `std::function` among others
   * Louis Dionne's Dyno: https://github.com/ldionne/dyno
 
-  ---
+---
 
-  ## Opaque Types in API Design
+## Opaque Types in API Design
 
-  ### Our Use case
-    * Allocation of semi-large to really-large numeric tables
-    * Allocations are often out of critical path
-    * Few resizing and no arbitrary insertion (no `push_back`)
-    * Allocator can be more than just wrapping `malloc`/`free`
+### Use Case: Dynamic Arrays
+  * Allocation of semi-large to really-large numeric tables
+  * Allocations are often out of critical path
+  * Few resizing and growth (no `push_back`)
+  * Allocator can be more than just wrapping `malloc`/`free`
 
-  ### Our Base setup
-    * Each allocator is written as an Alexandrescu's Allocator
-      * Deals with block of `std::byte`
-      * Knows about the size of the allocated block
-      * Allocators can be chained/selected via arbitrary policies
+### Our Setup
+  * Each allocator is written as an Alexandrescu's Allocator
+    * Deals with block of `void*`
+    * Knows about the size of the allocated block
+    * Allocators can be chained/selected via arbitrary policies
 
 ---
 
 ## Opaque Types in API Design
 
-### Our Use case
-  * Allocation of semi-large to really-large numeric tables
+### Use Case: Dynamic Arrays
+  * Allocation of semi-large to really-large numeric arrays
   * Allocations are often out of critical path
-  * Few resizing and no arbitrary insertion (no `push_back`)
+  * Few resizing and growth (no `push_back`)
   * Allocator can be more than just wrapping `malloc`/`free`
 
-### Our Base setup
+### Our Setup
   * Each allocator is written as an Alexandrescu's Allocator
   * Allocator definition on user side must be simple
     * No CRTP
@@ -328,16 +295,16 @@ Joel FALCOU - Vincent REVERDY
 
 ## Opaque Types in API Design
 
-### Our Use case
+### Use Case: Dynamic Arrays
   * Allocation of semi-large to really-large numeric tables
   * Allocations are often out of critical path
-  * Few resizing and no arbitrary insertion (no `push_back`)
+  * Few resizing and growth (no `push_back`)
   * Allocator can be more than just wrapping `malloc`/`free`
 
-### Our Base setup
+### Our Setup
   * Each allocator is written as an Alexandrescu's Allocator
   * Allocator definition on user side must be simple
-  * Allocator must be `RegularType`
+  * Allocator must be `SemiRegularType`
     * No need to deals with complex traits
     * Allocators are just gonna be copied along their tables
 
@@ -403,7 +370,7 @@ struct heap_allocator
 ### The Allocator Trifecta
   * A virtual API object
   * A template adapter implementing said API
-  * A `RegularType` wrapper
+  * A `SemiRegularType` wrapper
 
 ---
 
@@ -411,12 +378,12 @@ struct heap_allocator
 
 ### The `allocator` Concept
   * We require some `allocate` and `deallocate` functions
-  * We expand upon `std::regular` and `std::swappable`
+  * We expand upon `std::semiregular` and `std::swappable`
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 template<typename A>
-concept allocator =   std::regular<A>
+concept allocator =   std::semiregular<A>
                   &&  std::swappable<A>
                   &&  requires(A a, block& b, std::ptrdiff_t n)
 {
@@ -478,7 +445,7 @@ template<concepts::allocator T> struct model_t final : api_t
 
 ## Allocator design in Kiwaku
 
-### The `any_allocator` - `RegularType` wrapper
+### The `any_allocator` - `SemiRegularType` wrapper
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
@@ -493,8 +460,7 @@ class any_allocator
   any_allocator(any_allocator const& a) : data( a.data->clone() ) {}
 
   template<typename T>
-  any_allocator(T&& t)
-    : data(std::make_unique<model_t<std::decay_t<T>>>(std::forward<T>(t))) {}
+  any_allocator(T&& t) : data(make_model(std::forward<T>(t))) {}
 
   void swap(any_allocator& other) noexcept    { data.swap(other.data);    }
   [[nodiscard]] block allocate(std::size_t n) { return data->allocate(n); }
@@ -505,28 +471,6 @@ class any_allocator
 
 ---
 
-## Kiwaku Allocator - Usage
-
-### Simple integration
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-using namespace kwk::literals;
-
-// Dynamic array using the default allocator
-kwk::array<float,kwk::_2D> a1(kwk::of_shape(200,200))
-
-// Dynamic array using the some other allocator modeling concepts::allocator
-kwk::array<float,kwk::_2D> a2 ( "allocator"_kw  = some_allocator{}
-                              , "shape"_kw      = kwk::of_shape(20,20)
-                              );
-
-// Allocator and data are copied to a1
-a1 = a2;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
 ## Kiwaku Allocator - Benchmarks
 
 ### [Rough QuickBench](https://www.quick-bench.com/q/ahape-nLwLb1bdKqp5h2DfaIFgc)
@@ -587,23 +531,246 @@ a1 = a2;
 
 ---
 
-## Definition & classical implementation
+## Keyword Parameters
 
-### SECTION
+### Definition
+  * Languages may provide a syntax to pass arguments to function based on their names
+  * Such parameters are called Keyword Parameters
+  * Ex: Python, C#
 
-JOEL
+### Challenges in C++
+  * Should they participate in mangling ?
+  * Which names of a parameters count ?
+  * Can I restrict it somehow
+  * See [N4172](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4172.htm)
+
+---
+
+## Keyword Parameters
+
+### Our Use Case
+  * Passing parameters to array or view constructors to simplify API
+  * Passing `constexpr` parameters to array or view constructors type interface
+  * Keyword can be predefined
+  * A function should be able to restrict which keyword it accepts
+
+### Our Solution
+  * Define keywords locally as `constexpr` instance of unique types
+  * Bind keywords and values in a generic way
+  * Retrieve data from a keywords using a lambda as container
+  * Concepts can restrict the keyword to pass to a function
 
 ---
 
 ## Keywords parameters as lightweight EDSL
 
-### SECTION
+### Defining a keyword
+  * The `rbr::keyword_type` acts as a keyword builder
+  * Keyword can be predefined
+  * The UDL syntax allow for local, on the spot keyword access
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+namespace kwk::keyword
+{
+  // The rbr::keyword inline variable generate a new keyword_type
+  inline constexpr auto shape = rbr::keyword<struct shape_option>;
+
+  // The _kw UDL generate a keyword from the list of character of the string
+  inline constexpr auto allocator = "allocator"_kw;
+
+  // Equivalent without UDL
+  inline constexpr auto allocator = rbr::keyword<id_<'a','l','l','o','c','a','t','o','r'>>;
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
-## Application: Disambiguation of size/value constructors
+## Keywords parameters as lightweight EDSL
 
-### SECTION
+### Binding a value to a keyword
+  * `keyword_type` has an overloaded generic assignment operator
+  * This operator returns a `linked_value` cosntructed from the keyword
+  * The `linked_value` is initalized with lambda capturing the value of the parameters
+  * This lambda accept the keyword as a parameter and return the value
+
+### Retrieving a value from a keyword
+  * All keyword/value pairs are gathered in a `overload` like structure
+  * Every `operator()` of each pair is put back into the interface
+  * Fetching a value is simply done by calling this overload with the required keyword
+
+---
+
+## Keywords parameters as lightweight EDSL
+
+### Binding a value to a keyword
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename T> template<typename V>
+constexpr auto keyword_type<T>::operator=(V &&v) const noexcept
+{
+  using type = keyword_type<T>;
+  if constexpr( std::is_lvalue_reference_v<V> )
+  {
+    return linked_value(*this, [&v](type const &) -> decltype(auto) { return v; });
+  }
+  else
+  {
+    return linked_value ( *this
+                        , [w = std::move(v)](type const &) -> V const & { return w; }
+                        );
+  }
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Keywords parameters as lightweight EDSL
+
+### Retrieving a value from a keyword
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// Notify of an unsupported keyword
+struct unknown_key { template<typename... T> unknown_key(T &&...) {} };
+
+// Aggregate lambdas and give them a operator(Key)-like interface
+template<typename... Ts> struct aggregator : Ts...
+{
+  constexpr aggregator(Ts &&...t) noexcept : Ts(RBR_FWD(t))... {}
+  using Ts::operator()...;
+
+  template<typename K> constexpr auto operator()(keyword_type<K> const &) const noexcept
+  {
+    // If not found before, return the unknown_key value
+    return unknown_key {};
+  }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Bringing everything together
+
+### The `settings` helper
+  * `settings` is an helper class taking care of type deduction from a pack of keyword parameters
+  * It provides function to detect a keyword in a list of keyword parameters
+  * It provides function to validate a list of keyword parameters
+  * It supports optional default value fi a keyword is not found
+
+### `keyword_parameter` and `match`
+  * Allow for proper constraint of function with keyword parameters
+  * Enable non-trivial requires clause based on the presence of a given keyword
+
+---
+
+## Bringing everything together
+
+### The `settings` helper
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename P0, typename P1>
+auto replicate( P0 p0, P1 p1 )
+{
+  using namespace rbr::literals;
+  auto const params = rbr::settings(p0,p1);
+
+  return std::string( params["replication"_kw], params["letter"_kw] );
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Bringing everything together
+
+### The `settings` helper
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename P0, typename P1>
+auto replicate( P0 p0, P1 p1 )
+{
+  using namespace rbr::literals;
+  auto const params = rbr::settings(p0,p1);
+
+  return std::string( params["replication"_kw | 5  ]
+                    , params["letter"_kw      | '*']
+                    );
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Bringing everything together
+
+### The `keyword_parameter` concept
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<rbr::keyword_parameter... Params>
+auto replicate( Params... ps )
+{
+  using namespace rbr::literals;
+  auto const params = rbr::settings(ps);
+
+  return std::string( params["replication"_kw | 5  ]
+                    , params["letter"_kw      | '*']
+                    );
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Bringing everything together
+
+### The `match` helper
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<rbr::keyword_parameter... Params>
+requires( rbr::match<P0,P1>::with("replication"_kw | "letter"_kw) )
+auto replicate( Params... ps )
+{
+  using namespace rbr::literals;
+  auto const params = rbr::settings(ps);
+
+  return std::string( params["replication"_kw | 5  ]
+                    , params["letter"_kw      | '*']
+                    );
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Keyword parameters - Usage
+
+### Kiwaku container constructors
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+using namespace kwk::literals;
+
+// Dynamic array using the default allocator
+kwk::array<float,kwk::_2D> a1(kwk::of_shape(200,200))
+
+// Dynamic array using the some other allocator modeling concepts::allocator
+kwk::array<float,kwk::_2D> a2 ( "allocator"_kw  = some_allocator{}
+                              , "shape"_kw      = kwk::of_shape(20,20)
+                              );
+
+// Allocator and data are copied to a1
+a1 = a2;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 <!------------------------------------------------------------------------------------------------->
@@ -616,12 +783,6 @@ JOEL
 ---
 
 ## Definition & C++20 status
-
-### SECTION
-
----
-
-## Removing code duplication with NTTPs
 
 ### SECTION
 
@@ -650,6 +811,19 @@ JOEL
 
 ---
 
+## Removing code duplication with NTTPs
+
+### Problem
+
+<!--
+Reprendre l'exemple de mdspan (juste avec des nombres)
+2 types différents dynamique/statique
+Rajouter de la sémantique en faisant des objets
+=> objet constexpr
+-->
+
+---
+
 ## Array shapes as NTTP
 
 ### Main idea
@@ -660,9 +834,9 @@ JOEL
 ### Proposed interface
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-array<float,_3D>             x;                  // Uninitialized 3D array with dynamic size
-array<float,_2D>             y( of_shape(4,3) ); // 2D array with dynamic size of 4x3
-array<float,_4D(4,3,1,2)>    z;                  // 4D array with  static size of 4x3x1x2
+array<float, _3D>             x;                  // Uninitialized 3D array with dynamic size
+array<float, _2D>             y( of_shape(4,6) ); // 2D array with dynamic size of 4x6
+view<float, _4D(4,3,1,2)>     z(y.data());        // 4D view of y with static size of 4x3x1x2
 
 array<float, extent[4]()[3]> a;                  // Uninitialized 3D array with size of 4x?x3
 array<float, extent[4]()[3]> b( _[1] = 6 );      // 3D array with size of 4x6x3
@@ -673,6 +847,53 @@ array<float, s[10]>          w;                  // Uninitialized 3D array with 
 </script>
 
 ---
+
+## Array shapes as NTTP
+
+### Benefits
+  * Unique type for static and dynamic extents
+  * `sizeof(array)`/`sizeof(view)` are minimal
+  * Safer and more expressive interface
+
+### Proposed interface
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+array<float, _3D>             x;                  // Uninitialized 3D array with dynamic size
+array<float, _2D>             y( of_shape(4,6) ); // 2D array with dynamic size of 4x6
+view<float, _4D(4,3,1,2)>     z(y.data());        // 4D view of y with static size of 4x3x1x2
+
+array<float, extent[4]()[3]> a;                  // Uninitialized 3D array with size of 4x?x3
+array<float, extent[4]()[3]> b( _[1] = 6 );      // 3D array with size of 4x6x3
+
+constexpr auto               s = extent()();     // 2D dynamic extent
+array<float, s[10]>          w;                  // Uninitialized 3D array with size of ?x?x10
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+
+<!--
+Présenter ça comme ce que l'on veut faire
+
+-->
+
+<!--
+Présenter tout le mécanisme de shape sans nécessairement aller dans le code
+index_map / bit_map
+A tout moment on a le nombre minimal de données dynamiques stockées
+-->
+
+<!--
+Ce que ça apporte en plus: view_builder => construit le type nécessaire pour stocker une view
+Puis parler de view_access
+-->
+
+<!--
+Conclusion partie: améliore l'API
+Exploiter les infos proprement pour générer l'implem optimale
+-->
+
 
 <!------------------------------------------------------------------------------------------------->
 <!--
@@ -688,7 +909,34 @@ array<float, s[10]>          w;                  // Uninitialized 3D array with 
 
 ## Summing up
 
-### SECTION
+### The Times, They are-a Changing
+  * Like for C++11/14, C++17/20 is a game changer
+  * We now have tools to have beter structured template code
+  * We can't go there by just incrementally changing existing code and practices
+
+### Lessons Learnt
+  * Breaking the old patterns was frutiful
+  * API design improved by using user-centric mindset
+  * No noticable drop in performances
+
+---
+
+## What's next
+
+### Funky C++ Libraries and where to find them
+  * Raberu : The Keyword Parameters library
+    * Part of [https://github.com/jfalcou/ofw](https://github.com/jfalcou/ofw)
+    * Released and kind stable
+
+  * Kiwaku: Containers Done Right :
+    * [https://github.com/jfalcou/kiwaku](https://github.com/jfalcou/kiwaku)
+    * Still in pre-beta
+    * Documentation pending
+
+### Looking forward
+  * Kind genericity
+  * Meta-classes ?
+  * Circle like reflection ?
 
 ---
 
