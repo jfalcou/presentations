@@ -114,10 +114,20 @@ Joel FALCOU - Vincent REVERDY
 ## Why are those solutions not adequate ?
 
 ### Concerns are to be separated
-  * Lazy evaluation
+  * Lazy evaluation (C++Con 2019)
   * nD-array handling
   * Customization protocols
-  * Hardware support
+  * Hardware support (C++Europe 2021)
+
+---
+
+## Why are those solutions not adequate ?
+
+### Concerns are to be separated
+  * Lazy evaluation (C++Con 2019)
+  * nD-array handling
+  * Customization protocols
+  * Hardware support (C++Europe 2021)
 
 
 !!! ERROR: Solve each issue in its own software component
@@ -129,10 +139,10 @@ Joel FALCOU - Vincent REVERDY
 ## Why are those solutions not adequate ?
 
 ### Concerns are to be separated
-  * Lazy evaluation
+  * Lazy evaluation (C++Con 2019)
   * nD-array handling
   * Customization protocols
-  * Hardware support
+  * Hardware support (C++Europe 2021)
 
 !!! ERROR: Solve each issue in its own software component
     * Maximize re-usability
@@ -243,6 +253,9 @@ Joel FALCOU - Vincent REVERDY
 <!------------------------------------------------------------------------------------------------->
 <!--
   PART 1 : OPAQUE TYPES
+
+  https://www.quick-bench.com/q/1iaRpOVaWtiV7egJLIfWVNSM1hU
+  https://godbolt.org/z/ee37YWqf1
 -->
 <!------------------------------------------------------------------------------------------------->
 
@@ -250,23 +263,320 @@ Joel FALCOU - Vincent REVERDY
 
 ---
 
-## Definition & classical implementation
+## Opaque Types
 
-### SECTION
+### Definition
+  * A type is **opaque** if you can't see through it
+  * i.e the contents of its implementation is not accessible directly
+  * Such types are often implemented using **type-erasure**
+  * If users can't look at one type's internals, they are less opportunity for abstraction leaks
+
+  ### State of the Art
+  * [Based on Sean Parent's talk on Polymorphism](https://tinyurl.com/seanparent)
+  * Use polymorphism as an implementation detail instead of as a first class property
+  * Provides a full Regular Type interface on top of the polymorphic behavior
+  * Does not require intrusive adaptation from user code
+
+---
+
+## Opaque Types
+
+### Definition
+  * A type is **opaque** if you can't see through it
+  * i.e the contents of its implementation is not accessible directly
+  * Such types are often implemented using **type-erasure**
+  * If users can't look at one type's internals, they are less opportunity for abstraction leaks
+
+### Opaque type in the wild
+  * `FILE*`, the Great Old One
+  * `std::any`, `std::function` among others
+  * Louis Dionne's Dyno: https://github.com/ldionne/dyno
+
+  ---
+
+  ## Opaque Types in API Design
+
+  ### Our Use case
+    * Allocation of semi-large to really-large numeric tables
+    * Allocations are often out of critical path
+    * Few resizing and no arbitrary insertion (no `push_back`)
+    * Allocator can be more than just wrapping `malloc`/`free`
+
+  ### Our Base setup
+    * Each allocator is written as an Alexandrescu's Allocator
+      * Deals with block of `std::byte`
+      * Knows about the size of the allocated block
+      * Allocators can be chained/selected via arbitrary policies
 
 ---
 
-## Opaque types for non-critical customization points
+## Opaque Types in API Design
 
-### SECTION
+### Our Use case
+  * Allocation of semi-large to really-large numeric tables
+  * Allocations are often out of critical path
+  * Few resizing and no arbitrary insertion (no `push_back`)
+  * Allocator can be more than just wrapping `malloc`/`free`
+
+### Our Base setup
+  * Each allocator is written as an Alexandrescu's Allocator
+  * Allocator definition on user side must be simple
+    * No CRTP
+    * No polymorphic base class
 
 ---
 
-## Application: Allocators
+## Opaque Types in API Design
 
-### SECTION
+### Our Use case
+  * Allocation of semi-large to really-large numeric tables
+  * Allocations are often out of critical path
+  * Few resizing and no arbitrary insertion (no `push_back`)
+  * Allocator can be more than just wrapping `malloc`/`free`
+
+### Our Base setup
+  * Each allocator is written as an Alexandrescu's Allocator
+  * Allocator definition on user side must be simple
+  * Allocator must be `RegularType`
+    * No need to deals with complex traits
+    * Allocators are just gonna be copied along their tables
 
 ---
+
+## Allocator design in Kiwaku
+
+### Basic Block of Memory
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+struct block
+{
+  explicit operator bool() const { return length != 0; }
+
+  friend bool operator!=(block const& lhs,block const& rhs) noexcept;
+  friend bool operator==(block const& lhs,block const& rhs) noexcept
+  {
+    return lhs.data == rhs.data && lhs.length == rhs.length;
+  }
+
+  void reset() noexcept { *this = block{} }
+  void swap(block& other) { /* ... */ }
+
+  void*           data    = nullptr;  // Pointer to the allocated block of memory
+  std::ptrdiff_t  length  = 0;        // Size in bytes of the allocated block of memory
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Allocator design in Kiwaku
+
+### A Simple `malloc` allocator
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+struct heap_allocator
+{
+  [[nodiscard]] block allocate(std::ptrdiff_t n) noexcept
+  {
+    return (n!=0) ? block{ malloc(n), n } : block{ nullptr, n };
+  }
+
+  void deallocate(block & b) noexcept { if(b.data) free(b.data); }
+
+  void swap(heap_allocator&) {}
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+  * No `virtual` interface
+  * No complex CRTP-like definition
+
+---
+
+## Allocator design in Kiwaku
+
+### The `any_allocator`
+  * Uses Parent-style polymorphic object designs
+  * Distinct from `std::pmr::polymorphic_allocator` (no `memory_resource`)
+  * Provides an associated concept `kwk::concepts::allocator`
+
+### The Allocator Trifecta
+  * A virtual API object
+  * A template adapter implementing said API
+  * A `RegularType` wrapper
+
+---
+
+## Allocator design in Kiwaku
+
+### The `allocator` Concept
+  * We require some `allocate` and `deallocate` functions
+  * We expand upon `std::regular` and `std::swappable`
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename A>
+concept allocator =   std::regular<A>
+                  &&  std::swappable<A>
+                  &&  requires(A a, block& b, std::ptrdiff_t n)
+{
+  { a.allocate(n)   } -> std::same_as<block>;
+  { a.deallocate(b) };
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Allocator design in Kiwaku
+
+### The `any_allocator` - Basic Virtual API
+  * Only piece of polymorphism in the design
+  * Internal type to `kwk::any_allocator`
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+struct api_t
+{
+  virtual ~api_t() {} // Obviously
+
+  virtual block allocate(std::size_t) = 0;  // Actual allocator interface
+  virtual void  deallocate(block&)    = 0;  // Actual allocator interface
+
+  virtual std::unique_ptr<api_t>  clone() const = 0; // Helper for polymorphic copy
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Allocator design in Kiwaku
+
+### The `any_allocator` - Template Adapter
+  * Final class implementing `api_t`
+  * Use `concepts::allocator` to prevent errors
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<concepts::allocator T> struct model_t final : api_t
+{
+  model_t() = default;
+  model_t(const T&  t)  : object(t)             {}
+  model_t(T&&       t)  : object(std::move(t))  {}
+
+  block allocate(std::size_t n)        override { return object.allocate(n);                }
+  void  deallocate(block& b)           override { object.deallocate(b);                     }
+  std::unique_ptr<api_t> clone() const override { return std::make_unique<model_t>(object); }
+
+  private:
+  T object;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Allocator design in Kiwaku
+
+### The `any_allocator` - `RegularType` wrapper
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+class any_allocator
+{
+  struct api_t  { /* ... */ };
+  template<concepts::allocator T> struct model_t final : api_t { /* ... */ };
+
+  std::unique_ptr<api_t> data;
+
+  public:
+  any_allocator(any_allocator const& a) : data( a.data->clone() ) {}
+
+  template<typename T>
+  any_allocator(T&& t)
+    : data(std::make_unique<model_t<std::decay_t<T>>>(std::forward<T>(t))) {}
+
+  void swap(any_allocator& other) noexcept    { data.swap(other.data);    }
+  [[nodiscard]] block allocate(std::size_t n) { return data->allocate(n); }
+  void  deallocate(block& b)                  { data->deallocate(b);      }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Kiwaku Allocator - Usage
+
+### Simple integration
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+using namespace kwk::literals;
+
+// Dynamic array using the default allocator
+kwk::array<float,kwk::_2D> a1(kwk::of_shape(200,200))
+
+// Dynamic array using the some other allocator modeling concepts::allocator
+kwk::array<float,kwk::_2D> a2 ( "allocator"_kw  = some_allocator{}
+                              , "shape"_kw      = kwk::of_shape(20,20)
+                              );
+
+// Allocator and data are copied to a1
+a1 = a2;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+## Kiwaku Allocator - Benchmarks
+
+### [Rough QuickBench](https://www.quick-bench.com/q/ahape-nLwLb1bdKqp5h2DfaIFgc)
+  * Succession of allocate/deallocate of 16 Mb
+  * Scenario favorable to de-virtualization
+
+<center>![](images/bench_allocator.png style="height: 15rem")</center>
+
+---
+## Kiwaku Allocator - Benchmarks
+
+### [More specific nanobench](https://godbolt.org/z/qoY3qqvcG)
+  * Multiple allocation of 16 Mb
+  * Single final deallocation
+  * Scenario unfavorable to de-virtualization
+
+| relative |    ns/op |        op/s |  err% | Scenario
+|---------:|---------:|------------:|------:|:---------------------
+|   100.0% | 4,627.60 |  216,094.74 |  8.1% | `Concrete Allocation`
+|   101.6% | 4,553.55 |  219,609.10 |  3.3% | `Opaque Allocation`
+
+---
+## Kiwaku Allocator - Benchmarks
+
+### [More specific nanobench](https://godbolt.org/z/qoY3qqvcG)
+  * Multiple allocation of 256 b
+  * Single final deallocation
+  * Scenario unfavorable to de-virtualization
+
+| relative |    ns/op |         op/s |  err% | Scenario
+|---------:|---------:|-------------:|------:|:---------------------
+|   100.0% |   182.05 | 5,493,007.13 |  4.9% | `Concrete Allocation`
+|    97.1% |   187.53 | 5,332,397.82 |  4.0% | `Opaque Allocation`
+
+---
+
+## Opaque Types - Conclusion
+
+### Simplify API by using Opaque Types
+  * Allocator are no longer parts of the template type of tables
+  * Less rigid template API
+  * Good candidate to be pre-compiled (consider using LTO ?)
+
+### What do we learn
+  * Building interface as a set of concrete type + Parent's polymorphic type is a win
+  * Easy to maintain and to extend for users
+  * Do your homework and benchmarks !
+
+---
+
 <!------------------------------------------------------------------------------------------------->
 <!--
   PART 2 : KEYWORD PARAMETERS
@@ -280,6 +590,8 @@ Joel FALCOU - Vincent REVERDY
 ## Definition & classical implementation
 
 ### SECTION
+
+JOEL
 
 ---
 
