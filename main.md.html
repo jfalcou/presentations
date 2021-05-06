@@ -21,14 +21,15 @@ Joel FALCOU - Vincent REVERDY
 
 ---
 
-# Some Context
-
----
 <!------------------------------------------------------------------------------------------------->
 <!--
   INTRODUCTION
 -->
 <!------------------------------------------------------------------------------------------------->
+
+# Some Context
+
+---
 
 ## Why do we even array ?
 
@@ -149,8 +150,17 @@ Joel FALCOU - Vincent REVERDY
     * No Monolith effect
 
 <center>
-  **Today we will care about the nD-array handling and customization issues**
+  **Today we will care about the nD-array handling and customization issues**<br/>
+  **by dissecting our nD container library : kiwaku**
 </center>
+
+---
+
+## Why designing API is hard
+
+### Exploiting Compile Time Information
+  * Compilers need high-level information to enable high-quality optimization
+  * Users must be able to pass such information directly from the source
 
 ---
 
@@ -207,16 +217,16 @@ Joel FALCOU - Vincent REVERDY
 ### Runtime components handling
   * Full runtime components should be handled at runtime
   * No need for type-based specification
-  * **Our choice: Opaque types**
+  * **Kiwaku solution: Opaque types**
 
 ### Optimizations specifications:
   * Array and view behavior options must be trivial to setup
   * Users should have access to an intuitive option passing API
-  * **Our choice: Keyword parameters**
+  * **Kiwaku solution: Keyword parameters**
 
 ### Compile-time/Runtime Barrier
   * Compile-time options must have a rich semantic
-  * **Out choice : Non Type Template Parameters**
+  * **Kiwaku solution: Non Type Template Parameters**
 
 ---
 
@@ -264,7 +274,7 @@ Joel FALCOU - Vincent REVERDY
 ## Opaque Types in API Design
 
 ### Use Case: Dynamic Arrays
-  * Allocation of semi-large to really-large numeric tables
+  * Allocation of semi-large to really-large numeric arrays
   * Allocations are often out of critical path
   * Few resizing and growth (no `push_back`)
   * Allocator can be more than just wrapping `malloc`/`free`
@@ -296,7 +306,7 @@ Joel FALCOU - Vincent REVERDY
 ## Opaque Types in API Design
 
 ### Use Case: Dynamic Arrays
-  * Allocation of semi-large to really-large numeric tables
+  * Allocation of semi-large to really-large numeric arrays
   * Allocations are often out of critical path
   * Few resizing and growth (no `push_back`)
   * Allocator can be more than just wrapping `malloc`/`free`
@@ -459,8 +469,9 @@ class any_allocator
   public:
   any_allocator(any_allocator const& a) : data( a.data->clone() ) {}
 
-  template<typename T>
-  any_allocator(T&& t) : data(make_model(std::forward<T>(t))) {}
+  // ... All other obvious special members
+
+  template<typename T> any_allocator(T&& t) : data(make_model(std::forward<T>(t))) {}
 
   void swap(any_allocator& other) noexcept    { data.swap(other.data);    }
   [[nodiscard]] block allocate(std::size_t n) { return data->allocate(n); }
@@ -512,12 +523,12 @@ class any_allocator
 ### Simplify API by using Opaque Types
   * Allocator are no longer parts of the template type of tables
   * Less rigid template API
-  * Good candidate to be pre-compiled (consider using LTO ?)
+  * Good candidate to be pre-compiled (consider using LTO?)
 
 ### What do we learn
   * Building interface as a set of concrete type + Parent's polymorphic type is a win
   * Easy to maintain and to extend for users
-  * Do your homework and benchmarks !
+  * Do your homework and benchmark!
 
 ---
 
@@ -555,8 +566,8 @@ class any_allocator
   * A function should be able to restrict which keyword it accepts
 
 ### Our Solution
+  * RABERU: a library solution for keyword parameters
   * Define keywords locally as `constexpr` instance of unique types
-  * Bind keywords and values in a generic way
   * Retrieve data from a keywords using a lambda as container
   * Concepts can restrict the keyword to pass to a function
 
@@ -590,10 +601,17 @@ namespace kwk::keyword
 ## Keywords parameters as lightweight EDSL
 
 ### Binding a value to a keyword
-  * `keyword_type` has an overloaded generic assignment operator
-  * This operator returns a `linked_value` cosntructed from the keyword
-  * The `linked_value` is initalized with lambda capturing the value of the parameters
+  * `keyword_type` has a generic assignment operator
+  * This operator returns a `linked_value` constructed from the keyword
+  * The `linked_value` is initialized with a lambda capturing the value of the parameters
   * This lambda accept the keyword as a parameter and return the value
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+some_function(shape = extent[4][6]);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
 
 ### Retrieving a value from a keyword
   * All keyword/value pairs are gathered in a `overload` like structure
@@ -657,7 +675,7 @@ template<typename... Ts> struct aggregator : Ts...
 ## Bringing everything together
 
 ### The `settings` helper
-  * `settings` is an helper class taking care of type deduction from a pack of keyword parameters
+  * `settings` takes care of type deduction from a pack of keyword parameters
   * It provides function to detect a keyword in a list of keyword parameters
   * It provides function to validate a list of keyword parameters
   * It supports optional default value fi a keyword is not found
@@ -682,6 +700,16 @@ auto replicate( P0 p0, P1 p1 )
 
   return std::string( params["replication"_kw], params["letter"_kw] );
 }
+
+std::cout << replicate( "replication"_kw = 9, "letter"_kw = 'Z' ) << "\n";
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+Ouput:
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ZZZZZZZZZ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -703,6 +731,16 @@ auto replicate( P0 p0, P1 p1 )
                     , params["letter"_kw      | '*']
                     );
 }
+
+std::cout << replicate( "letter"_kw = 'Z' ) << "\n";
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+Ouput:
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ZZZZZ
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -724,6 +762,17 @@ auto replicate( Params... ps )
                     , params["letter"_kw      | '*']
                     );
 }
+
+std::cout << replicate( "replication"_kw = '6' ) << "\n";
+std::cout << replicate( 3.64 ) << "\n"; // won't compile
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+Ouput:
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+******
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -746,6 +795,17 @@ auto replicate( Params... ps )
                     , params["letter"_kw      | '*']
                     );
 }
+
+std::cout << replicate( "replication"_kw = '6' ) << "\n";
+std::cout << replicate( "repilcation"_kw = 7 ) << "\n"; // won't compile
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+Ouput:
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+******
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -911,7 +971,7 @@ Exploiter les infos proprement pour générer l'implem optimale
 
 ### The Times, They are-a Changing
   * Like for C++11/14, C++17/20 is a game changer
-  * We now have tools to have beter structured template code
+  * We now have tools to have better structured template code
   * We can't go there by just incrementally changing existing code and practices
 
 ### Lessons Learnt

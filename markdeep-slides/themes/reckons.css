@@ -126,12 +126,13 @@ body, .md div.title, .md h1, .md h2, .md h3 {
     font-size: 0.93em;  /* em! */
 }
 .md pre.listing {
-    font-size: 0.75em;
+    font-size: 0.65em;
     border-top: 0.1rem solid #ccc;
     border-bottom: 0.1rem solid #ccc;
     background-color: #eee;
     padding: 0.25rem 0.5rem;
     line-height: 1rem;
+    width:95%
 }
 .md pre.listing .linenumbers {
     padding-left: 0;
