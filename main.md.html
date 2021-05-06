@@ -482,6 +482,25 @@ class any_allocator
 
 ---
 
+## Kiwaku Allocator - Usage
+
+### Kiwaku container constructors
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// Dynamic array using the default allocator
+kwk::array<float,kwk::_2D> a1(kwk::of_shape(200,200))
+
+// Dynamic array using some other allocator
+kwk::array<float,kwk::_2D> a2(kwk::of_shape(10,50), some_allocator{});
+
+// Allocator and data are copied to a1
+a1 = a2;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
 ## Kiwaku Allocator - Benchmarks
 
 ### [Rough QuickBench](https://www.quick-bench.com/q/ahape-nLwLb1bdKqp5h2DfaIFgc)
@@ -539,6 +558,28 @@ class any_allocator
 <!------------------------------------------------------------------------------------------------->
 
 # Tips #2 - Keyword Parameters
+
+---
+## Keyword parameters - End goals
+
+### Kiwaku container constructors
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+using namespace kwk::literals;
+
+// Dynamic array using the default allocator
+kwk::array<float,kwk::_2D> a1(kwk::of_shape(200,200))
+
+// Dynamic array using the some other allocator modeling concepts::allocator
+kwk::array<float,kwk::_2D> a2 ( "allocator"_kw  = some_allocator{}
+                              , "shape"_kw      = kwk::of_shape(20,20)
+                              );
+
+// Allocator and data are copied to a1
+a1 = a2;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
@@ -678,7 +719,7 @@ template<typename... Ts> struct aggregator : Ts...
   * `settings` takes care of type deduction from a pack of keyword parameters
   * It provides function to detect a keyword in a list of keyword parameters
   * It provides function to validate a list of keyword parameters
-  * It supports optional default value fi a keyword is not found
+  * It supports optional default value if a keyword is not found
 
 ### `keyword_parameter` and `match`
   * Allow for proper constraint of function with keyword parameters
@@ -721,11 +762,11 @@ ZZZZZZZZZ
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<typename P0, typename P1>
-auto replicate( P0 p0, P1 p1 )
+template<typename... Params>
+auto replicate( Params... ps )
 {
   using namespace rbr::literals;
-  auto const params = rbr::settings(p0,p1);
+  auto const params = rbr::settings(ps...);
 
   return std::string( params["replication"_kw | 5  ]
                     , params["letter"_kw      | '*']
@@ -763,7 +804,7 @@ auto replicate( Params... ps )
                     );
 }
 
-std::cout << replicate( "replication"_kw = '6' ) << "\n";
+std::cout << replicate( "replication"_kw = 6 ) << "\n";
 std::cout << replicate( 3.64 ) << "\n"; // won't compile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
@@ -785,7 +826,7 @@ Ouput:
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 template<rbr::keyword_parameter... Params>
-requires( rbr::match<P0,P1>::with("replication"_kw | "letter"_kw) )
+requires( rbr::match<Params...>::with("replication"_kw | "letter"_kw) )
 auto replicate( Params... ps )
 {
   using namespace rbr::literals;
@@ -796,7 +837,7 @@ auto replicate( Params... ps )
                     );
 }
 
-std::cout << replicate( "replication"_kw = '6' ) << "\n";
+std::cout << replicate( "replication"_kw = 6 ) << "\n";
 std::cout << replicate( "repilcation"_kw = 7 ) << "\n"; // won't compile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
@@ -811,28 +852,20 @@ Ouput:
 
 ---
 
-## Keyword parameters - Usage
+## Keyword Parameters - Conclusion
 
-### Kiwaku container constructors
+### Flexible API with Keyword Parameters
+  * Isolate common use cases from power users concerns
+  * Future proof and resistant to "oops I need to break the API" scenarios
+  * Good candidate to be pre-compiled (consider using LTO?)
 
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-using namespace kwk::literals;
-
-// Dynamic array using the default allocator
-kwk::array<float,kwk::_2D> a1(kwk::of_shape(200,200))
-
-// Dynamic array using the some other allocator modeling concepts::allocator
-kwk::array<float,kwk::_2D> a2 ( "allocator"_kw  = some_allocator{}
-                              , "shape"_kw      = kwk::of_shape(20,20)
-                              );
-
-// Allocator and data are copied to a1
-a1 = a2;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
+### What do we learn
+  * Keyword parameters features set can be tailored to fit C++
+  * Keyword parameters can be implemented in C++ now as a library
+  * Try Raberu at [https://github.com/jfalcou/ofw](https://github.com/jfalcou/ofw)
 
 ---
+
 <!------------------------------------------------------------------------------------------------->
 <!--
   PART 3 : GENERIC NTTP
@@ -975,7 +1008,7 @@ Exploiter les infos proprement pour générer l'implem optimale
   * We can't go there by just incrementally changing existing code and practices
 
 ### Lessons Learnt
-  * Breaking the old patterns was frutiful
+  * Breaking the old patterns was fruitful
   * API design improved by using user-centric mindset
   * No noticable drop in performances
 
@@ -995,7 +1028,6 @@ Exploiter les infos proprement pour générer l'implem optimale
 
 ### Looking forward
   * Kind genericity
-  * Meta-classes ?
   * Circle like reflection ?
 
 ---
