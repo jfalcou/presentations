@@ -1,6 +1,6 @@
 <!------------------------------------------------------------------------------------------------->
 <!--
-  Copyright 2020 Joel Falcou
+  Copyright 2020 Joel Falcou - Vincent Reverdy
   Licensed under the terms of the Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)
 -->
 <!------------------------------------------------------------------------------------------------->
@@ -61,8 +61,8 @@ Joel FALCOU - Vincent REVERDY
 </div>
 
 <center>
-!!! ERROR:
-    How to design such a pervasive data structure ?
+!!! Note:
+    **How to design such a pervasive data structure ?**
 </center>
 
 ---
@@ -137,8 +137,7 @@ Joel FALCOU - Vincent REVERDY
   * Customization protocols
   * Hardware support (C++Europe 2021)
 
-
-!!! ERROR: Solve each issue in its own software component
+!!! Note: Solve each issue in its own software component
     * Maximize re-usability
     * No Monolith effect
 
@@ -152,7 +151,7 @@ Joel FALCOU - Vincent REVERDY
   * Customization protocols
   * Hardware support (C++Europe 2021)
 
-!!! ERROR: Solve each issue in its own software component
+!!! Note: Solve each issue in its own software component
     * Maximize re-usability
     * No Monolith effect
 
@@ -660,7 +659,6 @@ some_function(shape = extent[4][6]);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
-
 ### Retrieving a value from a keyword
   * All keyword/value pairs are gathered in a `overload` like structure
   * Every `operator()` of each pair is put back into the interface
@@ -864,7 +862,7 @@ Ouput:
 ### Flexible API with Keyword Parameters
   * Isolate common use cases from power users concerns
   * Future proof and resistant to "oops I need to break the API" scenarios
-  * Good candidate to be pre-compiled (consider using LTO?)
+  * Compile cost low due to `if constexpr` and Concepts
 
 ### What do we learn
   * Keyword parameters features set can be tailored to fit C++
@@ -882,13 +880,11 @@ Ouput:
 
 ---
 
-## Definition & C++20 status
+## Definition
 
-**<script type="preformatted">`template <class T, int N> array`</script>**
-    
-    * Non-Type Template Parameter
+<center>**<script type="preformatted">`template <class T, int N> array`</script>**</center>
 
-### Before C++20
+###  Non-Type Template Parameter (NTTP) Before C++20
     * An integral type
     * An enumeration type
     * A pointer type
@@ -898,19 +894,18 @@ Ouput:
 
 ---
 
-## Definition & C++20 status
+## Definition
 
-**<script type="preformatted">`template <class T, int N> array`</script>**
-    
-    * Non-Type Template Parameter
+<center>**<script type="preformatted">`template <class T, int N> array`</script>**</center>
 
-### Since C++20
+### Non-Type Template Parameter (NTTP)  Since C++20
     * An integral type
     * An enumeration type
     * A pointer type
     * A pointer to member type
     * `std::nullptr_t`
     * A lvalue reference type
+
     * **A floating-point type**
     * **A literal class type (with some restrictions)**
 
@@ -918,17 +913,19 @@ Ouput:
 
 ## Opening a new era of template metaprogramming
 
-### Generic syntax
-**<script type="preformatted">`template <auto Value> class_type`</script>**
+<center>**<script type="preformatted">`template <auto Value> class_type`</script>**</center>
 
 ### Generic NTTPs + Expression Template = EDSL mini-compilers
-**<script type="preformatted">`template <auto Expression> edsl_compiler`</script>**
+  * EDSL = Embedded Domain-Specific Language
+  * Capture arbitrary constexpr expression as NTTP
+  * Process them to generate a proper implementation
 
-    * NTTP = Non-Type Template Parameter
-    * EDSL = Embedded Domain-Specific Language
-    
-    
-### Challenge -> Defining array shapes
+<center>**<script type="preformatted">`template <auto Expression> edsl_compiler`</script>**</center>
+
+### Challenge
+  * Defining array shapes
+  * Supporting both runtime, compile-time and hybrid shapes
+  * Plot Twist : With A Single Type!
 
 ---
 
@@ -957,43 +954,44 @@ Ouput:
 
 ## Removing code duplication with NTTPs
 
-### Problems: type unsafe / verbosity
+### Handling static + runtime sizes of arrays
+  * Option 1 : One type for shape, one for compile-time shape
+  * Option 2 : Verbose template hell
 
 <script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-using my_span = std::mdspan<double, extents<3, -1, 7>>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ c++   
+using my_span = std::mdspan<double, extents<3, 9, 7>>;
 using my_other_span = std::mdspan<double, extents<3, std::dynamic_extent, 7>>;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
-### With generic NTTPs: passing domain information deep into compilers
+### Semantic-rich constexpr objects as NTTPs
+  * If we want a compile-time shape, we make a `constexpr` shape
+  * High-Performance: `constexpr` AST manipulation and optimization
   * Generic: unified interfaces (static/dynamic sizes)
-  * High-Performance: AST manipulation and optimization
   * Expressive: terse + precise
-  
-**-> Adding semantic and type-safety through constexpr objects**
 
 ---
 
 ## Array shapes as NTTP
 
 ### Main idea
-  * Design a `shape` type only caring about runtime size storage
+  * Design a `extent` type only caring about runtime size storage
   * Make it usable as an NTTP
   * Provides helpers to smooth definition of array
 
-### Proposed interface: what we want to achieve
+### What we want to achieve
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-array<float, _3D>             x;                  // Uninitialized 3D array with dynamic size
-array<float, _2D>             y( of_shape(4,6) ); // 2D array with dynamic size of 4x6
-view<float, _4D(4,3,1,2)>     z(y.data());        // 4D view of y with static size of 4x3x1x2
+array<float, _3D>               x;                  // Uninitialized 3D array with dynamic size
+array<float, _2D>               y( 4, 6 );          // 2D array with dynamic size of 4x6
+view<float, extent[4][3][1][3]> z(y.data());        // 4D view of y with static size of 4x3x1x2
 
-array<float, extent[4]()[3]> a;                  // Uninitialized 3D array with size of 4x?x3
-array<float, extent[4]()[3]> b( _[1] = 6 );      // 3D array with size of 4x6x3
+array<float, extent[4]()[3]> a;                     // Uninitialized 3D array with size of 4x?x3
+array<float, extent[4]()[3]> b( _[1] = 6 );         // 3D array with size of 4x6x3
 
-constexpr auto               s = extent()();     // 2D dynamic extent
-array<float, s[10]>          w;                  // Uninitialized 3D array with size of ?x?x10
+constexpr auto               s = extent()();        // 2D dynamic extent
+array<float, s[10]>          w;                     // Uninitialized 3D array with size of ?x?x10
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -1003,58 +1001,56 @@ array<float, s[10]>          w;                  // Uninitialized 3D array with 
 
 ### Benefits
   * Unique type for static and dynamic extents
-  * `sizeof(array)`/`sizeof(view)` are minimal
+  * `sizeof(array)` and `sizeof(view)` are minimal
   * Safer and more expressive interface
 
-### Proposed interface: what we want to achieve
+### What we want to achieve
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-array<float, _3D>             x;                  // Uninitialized 3D array with dynamic size
-array<float, _2D>             y( of_shape(4,6) ); // 2D array with dynamic size of 4x6
-view<float, _4D(4,3,1,2)>     z(y.data());        // 4D view of y with static size of 4x3x1x2
+array<float, _3D>               x;                  // Uninitialized 3D array with dynamic size
+array<float, _2D>               y( 4, 6 );          // 2D array with dynamic size of 4x6
+view<float, extent[4][3][1][3]> z(y.data());        // 4D view of y with static size of 4x3x1x2
 
-array<float, extent[4]()[3]> a;                  // Uninitialized 3D array with size of 4x?x3
-array<float, extent[4]()[3]> b( _[1] = 6 );      // 3D array with size of 4x6x3
+array<float, extent[4]()[3]> a;                     // Uninitialized 3D array with size of 4x?x3
+array<float, extent[4]()[3]> b( _[1] = 6 );         // 3D array with size of 4x6x3
 
-constexpr auto               s = extent()();     // 2D dynamic extent
-array<float, s[10]>          w;                  // Uninitialized 3D array with size of ?x?x10
+constexpr auto               s = extent()();        // 2D dynamic extent
+array<float, s[10]>          w;                     // Uninitialized 3D array with size of ?x?x10
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
 ---
 
-## Shaper
+## Shaper - Shaped definition Expression-template
 
-### A shape remembering the sequence of operations it was made from
+### Challenge: Building a Shape with memory of its construction
+  * Operator overloading for `()` and `[]`
+  * Incrementally build the data storage of size
+  * Provides helpers to access said data 
+
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template <typename... Ops> struct shaper {
-  using type = shaper<Ops...>;
-
-  static constexpr auto size_map() {return typename type_map<static_size, Ops...>::type{};}
-  static constexpr std::ptrdiff_t size() {return sizeof...(Ops);}
-  static constexpr bool is_fully_static = size_map().size == sizeof...(Ops);
-
-  constexpr shaper()  = default;
-  constexpr std::ptrdiff_t at(std::size_t i) const {return data_[i];}
-
+template <typename... Ds> struct shaper 
+{
+  // ...
   template <typename... X> constexpr auto append(X... x);
 
-  template <typename... Args> constexpr shaper(shaper<Args...> other, std::ptrdiff_t i) : data_(other.append(i)) {}
+  template <typename... Args> 
+  constexpr shaper(shaper<Args...> other, index_t i) : data_(other.append(i)) {}
 
-  constexpr shaper<Ops...,dynamic_size> operator()() const { return {*this, -1}; }
-  constexpr shaper<Ops...,static_size>  operator[](std::ptrdiff_t i) const { return {*this,  i}; }
+  constexpr shaper<Ds...,dynamic_size> operator()()           const { return {*this, -1}; }
+  constexpr shaper<Ds...,static_size>  operator[](index_t i)  const { return {*this,  i}; }
 
-  std::array<std::ptrdiff_t, sizeof...(Ops)> data_;
+  std::array<index_t, sizeof...(Ds)> data_;
 };
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
 ---
 
-## Extent
+## Extent - A Seed to grow shape trees
 
-### Helpers
+### Defining extent definition helpers
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 inline constexpr detail::shaper extent = {};
@@ -1066,99 +1062,92 @@ inline constexpr auto _2D = extent()();
 inline constexpr auto _3D = extent()()();
 inline constexpr auto _4D = extent()()()();
 
+// Dynamic nD short-cut
 template<std::size_t N>
-inline constexpr auto _nD = []<std::size_t... I>(std::index_sequence<I...> const&) {
+inline constexpr auto _nD = []<std::size_t... I>(std::index_sequence<I...> const&) 
+{
   return detail::shaper<decltype(detail::dynamic_size(I))...>{};
 }(std::make_index_sequence<N>{});
+
+// Some static shortcuts
+inline constexpr auto _3x3         = extent[3][3];
+inline constexpr auto _4x4         = extent[4][4];
+inline constexpr auto rubiks_cube  = extent[3][3][6];
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
 ---
 
-## Shape
+## Shape - Runtime storage for extent
 
-### A descriptor type to handle multidimensional array extents
+### Challenges
+
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<typename... T> shape(T... s) -> shape< _nD<sizeof...(T)> >;
+template<auto Shaper> struct shape 
+{
+  // Provide a compact storage for only runtime dimensions
+  // ???
 
-template<auto Shaper> struct shape {
-    // Types and constants
-    using size_map = decltype(Shaper.size_map());
-    static constexpr std::ptrdiff_t static_size = Shaper.size();
-    static constexpr std::ptrdiff_t storage_size = static_size - size_map::size;
-    using storage_type = std::array<std::ptrdiff_t,storage_size>;
-    using stride_type = unit_stride<static_size>;
-    static constexpr bool is_dynamic = storage_size >= 1;
-    static constexpr bool is_fully_dynamic = storage_size == static_size;
-    static constexpr bool is_fully_static = storage_size == 0;
+  // Proper lifecycle and construction API
+  shape(std::convertible_to<std::ptrdiff_t auto... );
+  shape(std::same_as<axis> auto... );
 
-    // Lifecycle
-    constexpr shape() noexcept;
-    template<std::same_as<detail::axis>... Extent> constexpr shape(Extent... s) noexcept;
-    template<auto OtherShaper> constexpr shape(shape<OtherShaper> const&) noexcept;
-    template<auto OtherShaper> constexpr explicit shape(shape<OtherShaper> const&) noexcept;
-    /* ... */
+  // Proper access to the data in all cases (CT,RT,hybrid)
+  template<std::size_t I> constexpr std::ptrdiff_t get() const;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+## Shape - Runtime storage for extent
+
+### Challenge: Optimal storage and retrieval
+  * Exploit the structure of the `extent` object
+  * Build a compile-time bitmap of index where size is known at compile-time
+  * Store only the limited amount of size informations
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<auto Shaper> struct shape 
+{
+  using size_map = decltype(Shaper.size_map());
+  static constexpr std::ptrdiff_t static_size = Shaper.size();
+  static constexpr std::ptrdiff_t storage_size = static_size - size_map::size;
+  
+  using storage_type = std::array<std::ptrdiff_t,storage_size>;
+
+  static constexpr bool is_dynamic = storage_size >= 1;
+  static constexpr bool is_fully_dynamic = storage_size == static_size;
+  static constexpr bool is_fully_static = storage_size == 0;
+
+  storage_type data_; 
 };
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
 ---
 
-## Shape
+## Compile-time bitmap 
 
-### A descriptor type to handle multidimensional array extents
+### Simplified Implementation
+
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<auto Shaper> struct shape {
-    /* ... */
-    // Access and capacity
-    static constexpr std::ptrdiff_t size() noexcept;
-    template<std::size_t I> constexpr auto get() const noexcept;
-    void swap(shape&) noexcept;
-    constexpr std::ptrdiff_t nbdims() const noexcept;
-    constexpr std::ptrdiff_t numel() const noexcept;
-    constexpr auto as_stride() const;
-    template<auto Shaper2> constexpr bool contains( shape<Shaper2> const&) const noexcept;
-    template<auto Shaper2> constexpr bool strictly_contains( shape<Shaper2> const&) const noexcept;
-    
-    // Operators
-    template<auto Shaper2> constexpr bool operator==(shape<Shaper2> const&) const noexcept;
-    template<auto Shaper2> constexpr bool operator!=(shape<Shaper2> const&) const noexcept;
-    friend std::ostream& operator<<(std::ostream& os, shape const& s);
+template<typename... Ds> struct index_list 
+{
+  static constexpr std::size_t size = (std::same_as<Ds,static_size> + ... );
 
-    // Storage
-    storage_type storage_;
-};
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
+  template<std::size_t Size> 
+  static constexpr std::size_t locate(std::size_t N) noexcept 
+  {
+    std::size_t i = 0;
+    std::size_t idx[Size] = {};
+    ((idx[i++] = std::same_as<Ds,static_size>), ...);
 
----
-
-
-## Index list
-
-### Augmented static integer list for mapping known unit values
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<std::size_t... I> struct index_list {
-  static constexpr std::size_t size = sizeof...(I);
-  template<std::size_t J> using append = index_list<I...,J>;
-  
-  // Is N in the set of known unit indexes ?
-  static constexpr bool contains(std::size_t N) noexcept {
-    bool found[] = { (I==N)... };
-    for(auto f : found) if(f) return true;
-    return false;
-  }
-  
-  // Find the actual dynamic index of a non-unit index
-  template<std::size_t Size> static constexpr std::size_t locate(std::size_t N) noexcept {
-      std::size_t idx[Size] = {};
-      ((idx[I] = 1), ...);
-      std::size_t pos = 0;
-      for(std::size_t i=0;i<N;++i) pos += (1-idx[i]);
-      return pos;
+    std::size_t pos = 0;
+    for(std::size_t i=0;i<N;++i) pos += (1-idx[i]);
+    return pos;
   }
 };
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1166,9 +1155,9 @@ template<std::size_t... I> struct index_list {
 
 ---
 
-## View builder
+## Exploiting NTTPs in Generative Programming Context
 
-### Deducing shape and stride from settings
+### View builder : Deducing shape and stride from settings
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 template <typename Type, auto... Settings>
@@ -1192,50 +1181,146 @@ struct view_builder
 
 ---
 
-## Array builder
+## Optimizing storage
 
-### Deriving from `view_builder`
+### A sample `view_access` specialization
+
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template <typename Type, auto... Settings>
-struct array_builder : view_builder<Type, Settings...>
+// Everything is static, don't store anything
+// Expected sizeof of the view : sizeof(void*)
+template<auto Shape, auto Stride> 
+requires( Shape.is_fully_static )
+struct  view_access<Shape, Stride>
 {
-  using base_t = view_builder<Type,Settings...>;
+  using shape_type  = std::remove_cvref_t<decltype(Shape)>;
+  using stride_type = std::remove_cvref_t<decltype(Stride)>;
 
-  static constexpr auto storage_ = []() {
-      if constexpr(base_t::shape_.is_fully_static) return base_t::opt_[option::storage | stack_];
-      else                                         return base_t::opt_[option::storage | heap_ ];
-  }();
+  constexpr std::ptrdiff_t  size()    const noexcept  { return Shape.numel(); }
+  constexpr auto            shape()   const noexcept  { return Shape;         }
+  constexpr auto            stride()  const noexcept  { return Stride;        }
 
-  static constexpr bool use_allocator = storage_.use_allocator();
-  using allocator_type = typename decltype(storage_)::allocator_type;
+  template<typename... Int>
+  constexpr std::ptrdiff_t index(Int... is) const noexcept { return Stride.index(is...); }
 
-  using type = std::conditional_t<
-    use_allocator,
-    heap_storage<Type, allocator_type, Settings...>,
-    stack_storage<Type,base_t::shape_,base_t::stride_>
-  >;
+  void swap( view_access& other ) noexcept {}
 };
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
 ---
+
+## Optimizing storage
+
+### A sample `view_access` specialization
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// Optimization : runtime 1D shape + unit stride
+// Expected sizeof of the view : sizeof(void*) + sizeof(std::ptrdiff_t)
+template<auto Shape, auto Stride>
+requires( !Shape.is_fully_static && Shape.static_size == 1 && Stride.is_unit )
+struct  view_access<Shape, Stride>
+{
+  using shape_type  = std::remove_cvref_t<decltype(Shape)>;
+  using stride_type = std::remove_cvref_t<decltype(Stride)>;
+
+  constexpr view_access( shape_type const& shp ) : shape_(shp) {}
+
+  constexpr std::ptrdiff_t  size()                    const noexcept  { return get<0>(shape_);  }
+  constexpr auto            shape()                   const noexcept  { return shape_;          }
+  constexpr stride_type     stride()                  const noexcept  { return {};              }
+  constexpr auto            index(std::ptrdiff_t is)  const noexcept  { return is;              }
+
+  void swap( view_access& other ) noexcept { shape_.swap( other.shape_ ); }
+
+  private:
+  shape_type shape_;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Optimizing storage
+
+### [Impact on code generation](https://godbolt.org/z/7T8b8P8Mc)
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+#include <kiwaku/container/view.hpp>
+
+using namespace kwk;
+
+void loop( view<float, extent[16][16]> v )
+{
+  for(std::ptrdiff_t i=0;i<v.size();++i)
+   v(i) *= v(i) + 3;
+}
+
+void loop( float* v )
+{
+  for(std::ptrdiff_t i=0;i<16*16;++i)
+   v[i] *= v[i] + 3;
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Optimizing storage
+
+### [Impact on code generation](https://godbolt.org/z/7T8b8P8Mc)
+  * Raw C code is auto-vectorized
+  * Direct access to the data
+  * No excess bloat
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+loop(float*):
+        movaps  xmm1, XMMWORD PTR .LC0[rip]
+        lea     rax, [rdi+1024]
+.L6:
+        movups  xmm0, XMMWORD PTR [rdi]
+        movups  xmm2, XMMWORD PTR [rdi]
+        add     rdi, 16
+        addps   xmm0, xmm1
+        mulps   xmm0, xmm2
+        movups  XMMWORD PTR [rdi-16], xmm0
+        cmp     rax, rdi
+        jne     .L6
+        ret
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Optimizing storage
+
+### [Impact on code generation](https://godbolt.org/z/7T8b8P8Mc)
+  * Kiwaku code is also auto-vectorized
+  * No excess bloat
+  * Size information is carried in the mangling
   
-<!--
-Présenter tout le mécanisme de shape sans nécessairement aller dans le code
-index_map / bit_map
-A tout moment on a le nombre minimal de données dynamiques stockées
--->
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+loop(view<float, shaper<static_size, static_size>{std::array<long, 2ul>{long [2]{16l, 16l}}}>):
+        movaps  xmm1, XMMWORD PTR .LC0[rip]
+        lea     rax, [rdi+1024]
+.L2:
+        movups  xmm0, XMMWORD PTR [rdi]
+        movups  xmm2, XMMWORD PTR [rdi]
+        add     rdi, 16
+        addps   xmm0, xmm1
+        mulps   xmm0, xmm2
+        movups  XMMWORD PTR [rdi-16], xmm0
+        cmp     rax, rdi
+        jne     .L2
+        ret
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
-<!--
-Ce que ça apporte en plus: view_builder => construit le type nécessaire pour stocker une view
-Puis parler de view_access
--->
-
-<!--
-Conclusion partie: améliore l'API
-Exploiter les infos proprement pour générer l'implem optimale
--->
+---
 
 ## Generic NTTPs - Conclusion
 
@@ -1250,7 +1335,8 @@ Exploiter les infos proprement pour générer l'implem optimale
   * Terse, rich, and natural syntax
   * High-levels of optimization for numerical arrays
 
-### Generic NTTPs + Expression Template = templates as EDSL compilers
+!!! Note: 
+    Consider generic NTTPs + Expression Template as EDSL compilers
 
 <!------------------------------------------------------------------------------------------------->
 <!--
