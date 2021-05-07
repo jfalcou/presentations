@@ -246,6 +246,29 @@ Joel FALCOU - Vincent REVERDY
 
 ---
 
+## Kiwaku Allocator - What do we want
+
+### Kiwaku container constructors
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// Dynamic array using the default allocator
+kwk::array<float,kwk::_2D> a1(kwk::of_shape(200,200))
+
+// Dynamic array using some other allocator
+kwk::array<float,kwk::_2D> a2(kwk::of_shape(10,50), some_allocator{});
+
+// Allocator and data are copied to a1
+a1 = a2;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+### Challenges
+  * How can we get rid of passing the allocator type as a template parameter ?
+  * Can we ensure proper copy and move semantic ?
+
+---
+
 ## Opaque Types
 
 ### Definition
@@ -488,25 +511,6 @@ class any_allocator
 
 ---
 
-## Kiwaku Allocator - Usage
-
-### Kiwaku container constructors
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-// Dynamic array using the default allocator
-kwk::array<float,kwk::_2D> a1(kwk::of_shape(200,200))
-
-// Dynamic array using some other allocator
-kwk::array<float,kwk::_2D> a2(kwk::of_shape(10,50), some_allocator{});
-
-// Allocator and data are copied to a1
-a1 = a2;
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
 ## Kiwaku Allocator - Benchmarks
 
 ### [Rough QuickBench](https://www.quick-bench.com/q/ahape-nLwLb1bdKqp5h2DfaIFgc)
@@ -599,7 +603,6 @@ a1 = a2;
 ### Challenges in C++
   * Should they participate in mangling ?
   * Which names of a parameters count ?
-  * Can I restrict it somehow
   * See [N4172](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4172.htm)
 
 ---
@@ -623,7 +626,7 @@ a1 = a2;
 ## Keywords parameters as lightweight EDSL
 
 ### Defining a keyword
-  * The `rbr::keyword_type` acts as a keyword builder
+  * `rbr::keyword` acts as a keyword builder
   * Keyword can be predefined
   * The UDL syntax allow for local, on the spot keyword access
 
@@ -648,7 +651,7 @@ namespace kwk::keyword
 ## Keywords parameters as lightweight EDSL
 
 ### Binding a value to a keyword
-  * `keyword_type` has a generic assignment operator
+  * `keyword` has a generic assignment operator
   * This operator returns a `linked_value` constructed from the keyword
   * The `linked_value` is initialized with a lambda capturing the value of the parameters
   * This lambda accept the keyword as a parameter and return the value
@@ -985,7 +988,7 @@ using my_other_span = std::mdspan<double, extents<3, std::dynamic_extent, 7>>;
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 array<float, _3D>               x;                  // Uninitialized 3D array with dynamic size
 array<float, _2D>               y( 4, 6 );          // 2D array with dynamic size of 4x6
-view<float, extent[4][3][1][3]> z(y.data());        // 4D view of y with static size of 4x3x1x2
+view<float, extent[4][3][1][2]> z(y.data());        // 4D view of y with static size of 4x3x1x2
 
 array<float, extent[4]()[3]> a;                     // Uninitialized 3D array with size of 4x?x3
 array<float, extent[4]()[3]> b( _[1] = 6 );         // 3D array with size of 4x6x3
@@ -1130,26 +1133,30 @@ template<auto Shaper> struct shape
 
 ## Compile-time bitmap 
 
-### Simplified Implementation
+### Prototype and usage by `shape`
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 template<typename... Ds> struct index_list 
 {
+  // How many static dimensions ?
   static constexpr std::size_t size = (std::same_as<Ds,static_size> + ... );
 
-  template<std::size_t Size> 
-  static constexpr std::size_t locate(std::size_t N) noexcept 
-  {
-    std::size_t i = 0;
-    std::size_t idx[Size] = {};
-    ((idx[i++] = std::same_as<Ds,static_size>), ...);
+  // is N a dimension we know at compile-time ?
+  static constexpr bool contains(std::size_t N) noexcept
 
-    std::size_t pos = 0;
-    for(std::size_t i=0;i<N;++i) pos += (1-idx[i]);
-    return pos;
-  }
+  // Find the runtime index of the Nth dimension runtime size
+  template<std::size_t Size> static constexpr std::size_t locate(std::size_t N) noexcept;
 };
+
+template<auto Shaper>
+template<std::size_t I> constexpr auto shaper<Shaper>::get() const noexcept
+{
+  if constexpr(size_map::contains(I))
+    return std::integral_constant<std::ptrdiff_t,Shaper.at(I)>{};
+  else
+    return storage_[size_map::template locate<static_size>(I)];
+}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -1161,20 +1168,23 @@ template<typename... Ds> struct index_list
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 template <typename Type, auto... Settings>
+struct view : view_builder<Type,Settings...>::span
+            , view_builder<Type,Settings...>::access 
+{ /* .... */ };
+
+template <typename Type, auto... Settings>
 struct view_builder
 {
-  using shaper_t = detail::shaper<detail::dynamic_size,detail::dynamic_size>;
-
   static constexpr auto opt_    = rbr::settings(Settings...);
 
-  static constexpr auto shape_  = kwk::shape<opt_[ option::shape | shaper_t{} ] >{};
-  static constexpr auto stride_ = opt_[ option::stride | shape_.as_stride() ];
+  static constexpr auto shape_  = kwk::shape< opt_[ "shape"_kw | _2D ] >{};
+  static constexpr auto stride_ = opt_[ "stride"_kw | shape_.as_stride() ];
 
   static constexpr bool is_dynamic      = shape_.is_dynamic;
   static constexpr bool is_fully_static = shape_.is_fully_static;
 
-  using span_base       = detail::view_span<Type*>;
-  using access_base     = detail::view_access<shape_, stride_>;
+  using span       = detail::view_span<Type*>;
+  using access     = detail::view_access<shape_, stride_>;
 };
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
@@ -1301,7 +1311,7 @@ loop(float*):
   * Kiwaku code is also auto-vectorized
   * No excess bloat
   * Size information is carried in the mangling
-  
+
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 loop(view<float, shaper<static_size, static_size>{std::array<long, 2ul>{long [2]{16l, 16l}}}>):
