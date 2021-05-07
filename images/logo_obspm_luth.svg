@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg:svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="Calque_1"
+   x="0px"
+   y="0px"
+   width="1213.8387"
+   height="473.66821"
+   viewBox="0 0 1213.8387 473.66822"
+   enable-background="new 0 0 763.914 349.232"
+   xml:space="preserve"
+   sodipodi:docname="logo_obspm_luth.svg"
+   inkscape:version="1.0.2-2 (e86c870879, 2021-01-15)"><svg:metadata
+   id="metadata74"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></svg:metadata><svg:defs
+   id="defs72"><svg:clipPath
+     clipPathUnits="userSpaceOnUse"
+     id="clipPath860"><svg:rect
+       style="fill:#ff7f2a;fill-opacity:1;stroke:#000000;stroke-width:2.11667;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect862"
+       width="124.35416"
+       height="48.947918"
+       x="3.9687572"
+       y="3.3125179" /></svg:clipPath></svg:defs><sodipodi:namedview
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1"
+   objecttolerance="10"
+   gridtolerance="10"
+   guidetolerance="10"
+   inkscape:pageopacity="0"
+   inkscape:pageshadow="2"
+   inkscape:window-width="1920"
+   inkscape:window-height="1018"
+   id="namedview70"
+   showgrid="false"
+   fit-margin-top="0"
+   fit-margin-left="0"
+   fit-margin-right="0"
+   fit-margin-bottom="0"
+   inkscape:zoom="0.45254834"
+   inkscape:cx="141.62657"
+   inkscape:cy="312.06338"
+   inkscape:window-x="-6"
+   inkscape:window-y="-6"
+   inkscape:window-maximized="1"
+   inkscape:current-layer="Calque_1" />
+<svg:g
+   id="g67">
+	<svg:path
+   fill="#00286e"
+   d="m 641.375,229.587 c 2.215,0 4.006,-1.789 4.006,-4.006 0,-2.207 -1.791,-3.994 -4.006,-3.994 -2.211,0 -4.002,1.787 -4.002,3.994 0,2.217 1.791,4.006 4.002,4.006 z"
+   id="path2" />
+	<svg:g
+   id="g65">
+		
+			<svg:radialGradient
+   id="SVGID_1_"
+   cx="29.8599"
+   cy="169.4409"
+   r="135.7692"
+   gradientTransform="matrix(1.2861,0,0,1.2861,188.289,-42.6729)"
+   gradientUnits="userSpaceOnUse">
+			<svg:stop
+   offset="0.8983"
+   style="stop-color:#00286E"
+   id="stop4" />
+			<svg:stop
+   offset="0.9156"
+   style="stop-color:#434684"
+   id="stop6" />
+			<svg:stop
+   offset="0.9387"
+   style="stop-color:#7F7CAA"
+   id="stop8" />
+			<svg:stop
+   offset="0.9595"
+   style="stop-color:#B3B1CE"
+   id="stop10" />
+			<svg:stop
+   offset="0.9773"
+   style="stop-color:#DCDAE8"
+   id="stop12" />
+			<svg:stop
+   offset="0.9914"
+   style="stop-color:#F5F5F9"
+   id="stop14" />
+			<svg:stop
+   offset="1"
+   style="stop-color:#FFFFFF"
+   id="stop16" />
+		</svg:radialGradient>
+		<svg:path
+   fill="url(#SVGID_1_)"
+   d="m 400.677,174.619 c 0,96.44 -78.177,174.613 -174.605,174.613 C 129.632,349.232 51.45,271.059 51.45,174.619 51.45,78.18 129.631,0 226.072,0 322.5,0 400.677,78.18 400.677,174.619 Z"
+   id="path19"
+   style="fill:url(#SVGID_1_)" />
+		<svg:path
+   fill="#00286e"
+   d="m 460.23,271.941 c -4.764,0 -8.829,-4.941 -8.829,-15.672 0,-4.324 1.173,-14.583 9.137,-14.583 5.703,0 10.392,6.113 10.392,14.96 -0.001,6.827 -2.659,15.295 -10.7,15.295 z m 15.805,-51.77 -5.186,2.888 v 21.055 c 0,0.695 -0.47,0.695 -0.548,0.695 -0.151,0 -0.391,0 -0.467,-0.15 -0.39,-0.865 -3.202,-7.355 -10.074,-7.355 -10.911,0 -13.456,11.501 -13.456,20.208 0,8.545 3.628,18.682 13.538,18.682 7.098,0 9.293,-6.132 10.537,-7.391 0.32,-0.318 0.628,0.312 0.628,0.793 v 6.975 l 5.027,-2.818 v -53.582 z"
+   id="path21" />
+		<svg:path
+   fill="#00286e"
+   d="m 485.931,252.562 c 0.713,-8.071 4.798,-11.124 9.275,-11.124 2.359,0 5.188,1.005 6.769,3.601 1.644,2.74 1.568,6.115 1.568,7.523 z m 22.862,3.741 c -0.381,-9.065 -1.774,-19.113 -13.347,-19.113 -4.242,0 -8.49,1.61 -11.546,6.357 -2.88,4.632 -3.351,9.714 -3.351,14.244 0,9.015 5.151,18.391 15.137,18.391 5.263,0 8.702,-1.56 12.029,-5.689 l -3.553,-2.817 c -2.188,2.65 -4.787,4.142 -8.329,4.142 -8.562,0 -10.051,-8.697 -10.051,-15.514 h 23.011 z"
+   id="path23" />
+		<svg:path
+   fill="#00286e"
+   d="m 553.344,228.175 c 7.899,0 13.774,2.107 13.774,11.141 0,7.468 -4.143,10.126 -13.937,10.126 h -9.08 v -21.267 z m -14.721,47.517 h 5.479 v -21.755 h 10.65 c 4.308,0 9.16,0 12.989,-3.501 1.872,-1.712 4.757,-5.599 4.757,-11.518 0,-4.815 -1.797,-8.876 -5.14,-11.592 -3.132,-2.557 -7.518,-3.404 -13.627,-3.404 h -15.109 v 51.77 z"
+   id="path25" />
+		<svg:path
+   fill="#00286e"
+   d="m 598.219,265.05 c -1.556,1.801 -7.159,7.137 -11.898,7.137 -5.758,0 -6.614,-4.472 -6.614,-6.192 0,-4.153 2.884,-6.976 6.69,-8.557 3.727,-1.566 7.776,-1.639 11.822,-1.639 z m 0.152,-12.469 c -5.6,0 -10.654,0 -15.86,2.276 -2.568,1.094 -8.051,4.311 -8.051,11.534 0,1.245 0.466,4.466 2.706,6.891 1.465,1.56 3.478,3.034 7.993,3.034 5.98,0 9.481,-2.963 13.291,-7.27 0.079,-0.08 0.157,-0.08 0.229,-0.08 0.079,0 0.161,0.08 0.239,0.08 0.076,0.239 0.076,0.319 0.076,0.867 0,1.294 0.937,4.31 3.035,5.549 1.406,0.854 3.045,0.854 5.929,0.854 v -4.242 c -2.177,0 -2.417,0 -3.113,-0.556 -0.48,-0.4 -1.251,-1.255 -1.251,-3.371 v -20.7 c 0,-2.038 0,-5.291 -3.663,-8.018 -2.805,-2.092 -6.772,-2.239 -8.478,-2.239 -4.516,0 -7.472,0.696 -13.603,3.631 l 2.174,4.914 c 3.731,-2.338 6.992,-4.049 11.192,-4.049 7.153,0 7.153,3.882 7.153,6.288 v 4.607 z"
+   id="path27" />
+		<svg:path
+   fill="#00286e"
+   d="m 612.968,240.207 5.109,-2.657 v 13.716 c 0,0.379 0.158,0.468 0.226,0.468 1.884,0 4.843,-10.232 15.688,-14.06 v 8.717 c -7.564,0 -11.545,3.748 -15.756,9.691 v 19.61 h -5.268 v -35.485 z"
+   id="path29" />
+		<svg:polygon
+   fill="#00286e"
+   points="638.697,275.692 638.697,238.301 643.545,238.301 643.545,275.692 "
+   id="polygon31" />
+		<svg:path
+   fill="#00286e"
+   d="m 653.294,267.753 c 2.805,2.486 6.146,4.45 10.027,4.45 5.133,0 7.931,-2.739 7.931,-6.339 0,-2.58 -1.712,-4.606 -4.039,-5.638 -0.937,-0.379 -8.559,-3.434 -10.188,-4.219 -1.248,-0.545 -5.294,-2.583 -5.294,-8.28 0,-6.656 4.904,-10.538 11.363,-10.538 4.119,0 7.223,1.155 10.905,2.867 l -1.643,4.618 c -2.816,-2.126 -6.08,-3.367 -9.652,-3.367 -3.114,0 -6.221,1.873 -6.221,5.325 0,3.745 2.171,4.688 9.097,7.417 5.909,2.35 10.144,4.157 10.144,11.196 0,7.507 -5.716,10.926 -12.55,10.926 -4.829,0 -8.011,-1.164 -11.909,-3.969 z"
+   id="path33" />
+		<svg:path
+   fill="#00286e"
+   d="m 454.435,141.244 -18.63,72.254 H 420.898 L 401.17,141.244 h 12.962 l 10.905,46.964 c 0.284,1.096 0.696,3.726 1.111,5.667 0.273,1.375 0.404,3.579 0.818,4.693 0.142,0.269 0.419,0.968 0.971,0.968 h 0.96 c 0.556,0 0.83,-0.699 0.975,-1.111 0.552,-1.383 0.685,-4.005 0.96,-5.521 0.28,-1.656 0.695,-3.316 0.971,-4.825 l 10.627,-46.835 z"
+   id="path35" />
+		<svg:path
+   fill="#00286e"
+   d="m 498.409,195.948 c -3.754,3.755 -10.139,10.308 -18.193,10.308 -6.67,0 -10.84,-5.301 -10.84,-11.421 0,-12.833 13.754,-18.692 29.033,-18.831 z m 12.702,-35.045 c 0,-7.16 -1.516,-12.533 -6.622,-16.545 -4.419,-3.452 -11.494,-4.843 -16.638,-4.843 -11.665,0 -18.194,3.457 -27.131,8.299 l 5.356,9.234 c 6.217,-3.854 13.724,-7.579 20.938,-7.579 11.394,0 11.394,7.023 11.394,9.919 v 9.363 c -11.949,0.134 -23.061,2.188 -30.957,7.949 -6.313,4.736 -10.579,11.572 -10.579,20.641 0,9.329 7.284,17.662 17.505,17.662 6.526,0 11.951,-0.676 20.277,-7.784 0.695,-0.549 3.754,-3.751 4.588,-4.296 l 0.412,0.265 c 0.415,3.35 2.486,6.078 3.586,7.173 3.734,4.097 8.01,4.512 14.087,4.794 v -9.729 c -6.217,0.281 -6.217,-4.188 -6.217,-7.956 v -36.567 z"
+   id="path37" />
+		<svg:path
+   fill="#00286e"
+   d="m 519.375,147.249 h 10.452 v -16.431 l 11.601,-11.175 h 1.375 v 27.605 h 11.456 v 7.753 h -12.214 v 43.011 c 0,1.382 0,6.498 6.077,6.498 4.135,0 8.695,-2.204 12.145,-3.998 v 10.905 c -3.73,2.08 -9.94,3.586 -14.075,3.586 -3.32,0 -16.601,-1.094 -16.601,-15.468 v -44.534 h -10.216 z"
+   id="path39" />
+		<svg:path
+   fill="#00286e"
+   d="m 593.283,149.745 c 1.779,0 3.572,0.284 5.219,0.971 3.31,1.385 6.333,4.441 7.983,9.139 1.648,4.701 2.478,12.303 2.478,17.146 0,10.383 -2.339,27.265 -15.55,27.265 -14.303,0 -16.23,-20.472 -16.23,-26.02 -10e-4,-11.204 2.473,-28.501 16.1,-28.501 z m -28.305,26.294 c 0,12.451 2.354,22.278 7.76,29.055 2.778,3.439 8.018,9.91 20.545,9.91 17.734,0 28.68,-15.592 28.68,-37.314 0,-7.048 -2.053,-17.705 -5.335,-24.062 -3.692,-7.022 -10.284,-14.128 -23.9,-14.128 -14.855,-0.001 -27.75,11.36 -27.75,36.539 z"
+   id="path41" />
+		<svg:polygon
+   fill="#00286e"
+   points="647.242,213.508 634.788,213.508 634.788,141.244 647.242,141.244 "
+   id="polygon43" />
+		<svg:path
+   fill="#00286e"
+   d="m 664.802,143.954 11.519,-4.703 v 22.959 c 0,0.83 0.278,1.659 0.689,1.659 h 1.52 c 0.825,-0.971 3.586,-5.675 4.275,-6.642 9.244,-13.829 18.085,-17.431 20.009,-17.977 v 20.469 c -1.512,-0.28 -3.031,-0.41 -4.548,-0.41 -8.564,0 -15.602,5.806 -20.707,12.848 v 41.352 h -12.757 z"
+   id="path45" />
+		<svg:path
+   fill="#00286e"
+   d="m 721.687,170.278 c 0.131,-2.506 0.271,-7.354 2.474,-12.636 2.341,-5.548 7.025,-9.156 12.951,-9.156 9.779,0 14.463,9.293 14.463,21.792 z m 42.096,1.8 c -0.414,-17.763 -9.604,-32.562 -26.944,-32.562 -6.486,0 -28.277,3.032 -28.277,39.909 0,22.534 11.738,35.813 28.41,35.813 13.088,0 18.716,-4.993 23.383,-9.149 l -7.135,-6.607 c -2.2,2.063 -6.193,6.062 -14.592,6.062 -12.814,0 -17.498,-10.728 -17.357,-26.813 h 42.644 z"
+   id="path47" />
+		<svg:path
+   fill="#00286e"
+   d="m 641.34,110.896 c 8.841,0 16.011,-7.167 16.011,-16 0,-8.838 -7.17,-16.01 -16.011,-16.01 -8.837,0 -16.007,7.172 -16.007,16.01 0,8.833 7.17,16 16.007,16 z"
+   id="path49" />
+		<svg:polygon
+   fill="#00286e"
+   points="12.503,213.508 0,213.508 0,106.899 12.503,106.899 "
+   id="polygon51" />
+		<svg:polygon
+   fill="#00286e"
+   points="30.311,151.494 18.946,151.494 36.635,107.225 48.197,107.225 "
+   id="polygon53" />
+		<svg:path
+   fill="#ffffff"
+   d="m 199.54,205.014 c -10.628,0 -17.2,-13.4 -17.2,-27.484 0,-23.818 11.75,-29.033 16.644,-29.033 13.276,0 14.396,19.587 14.396,28.89 0,4.789 0,27.627 -13.84,27.627 z m -29.168,6.227 10.998,4.777 0.284,-16.287 c 0,-0.284 0.555,-0.98 0.829,-0.98 0.698,0 0.979,0.414 1.677,1.957 1.956,4.44 6.993,14.561 18.036,14.561 20.498,0 23.692,-27.303 23.692,-37.882 0,-25.501 -9.864,-38.886 -23.552,-38.886 -7.833,0 -11.604,4.163 -13.838,6.807 -0.979,1.115 -1.816,2.497 -3.916,5.878 l -1.401,0.13 c -0.274,-0.28 -0.557,-0.695 -0.557,-1.128 v -41.201 l -12.251,4.73 v 97.524 z"
+   id="path55" />
+		<svg:path
+   fill="#ffffff"
+   d="m 270.701,154.737 c -5.469,-3.95 -9.26,-6.754 -16.556,-6.754 -7.726,0 -10.954,4.92 -10.954,9.71 0,5.48 4.348,8.288 8.848,10.549 l 11.792,5.911 c 4.075,1.966 13.592,6.756 13.592,19.271 0,13.096 -10.082,22.083 -24.124,22.083 -10.664,0 -17.171,-4.151 -21.485,-6.922 l 4.869,-9.534 c 6.932,5.627 11.138,7.469 17.041,7.469 8,0 12.496,-5.492 12.496,-11.553 0,-6.042 -2.945,-7.869 -14.889,-13.777 -13.405,-6.616 -18.397,-12.243 -18.397,-21.95 0,-12.805 10.116,-20.227 21.767,-20.227 5.197,0 10.815,0.283 19.644,5.749 z"
+   id="path57" />
+		<svg:path
+   fill="#ffffff"
+   d="m 297.119,169.75 c 0.14,-2.549 0.274,-7.507 2.537,-12.895 2.394,-5.671 7.191,-9.361 13.256,-9.361 10.013,0 14.811,9.503 14.811,22.256 z m 42.856,1.818 c -0.415,-18.12 -9.642,-33.067 -27.343,-33.067 -6.633,0 -28.894,3.042 -28.894,40.45 0,22.922 11.968,36.317 29.034,36.317 13.397,0 19.077,-5.023 23.764,-9.204 l -7.163,-6.697 c -2.216,2.092 -6.307,6.138 -14.907,6.138 -13.124,0 -17.911,-10.899 -17.772,-27.255 h 43.418 z"
+   id="path59" />
+		<svg:path
+   fill="#ffffff"
+   d="m 350.725,143.016 11.751,-4.772 v 23.266 c 0,0.851 0.282,1.688 0.692,1.688 h 1.543 c 0.844,-0.987 3.639,-5.75 4.342,-6.73 9.385,-14.015 21.24,-18.751 23.208,-19.307 l 2.496,25.004 c -1.535,-0.28 -8.477,-3.589 -10.02,-3.589 -8.682,0 -15.822,5.885 -21,13.03 v 41.903 h -13.014 v -70.493 z"
+   id="path61" />
+		<svg:path
+   fill="#ffffff"
+   d="m 79.956,78.724 -7.158,12.358 c 7.371,-0.926 11.754,-0.897 15.609,-0.897 33.154,0 60.136,26.98 60.136,60.144 0,33.146 -26.999,61.247 -60.136,60.128 -20.738,-0.699 -27.263,-6.545 -35.565,-13.681 l 2.394,15.39 c 10.378,6.484 17.657,10.295 33.171,10.295 39.769,0 72.139,-32.361 72.139,-72.132 0,-39.779 -32.37,-72.138 -72.139,-72.138 -5.61,0 -6.404,0.254 -8.767,0.581 z"
+   id="path63" />
+	</svg:g>
+</svg:g>
+<script>(function (data) {
+  var core = {
+    &quot;log&quot;: false,
+    &quot;hostname&quot;: function (url) {
+      if (&quot;blob:&quot; === url.substring(0, 5)) {
+        url = url.replace(&quot;blob:&quot;, '');
+        url = unescape(url);
+      }
+      //
+      var match = url.match(/:\/\/(www[0-9]?\.)?(.[^/:]+)/i);
+      var flag = (match !== null) &amp;&amp; (match.length &gt; 2) &amp;&amp; (typeof match[2] === &quot;string&quot;) &amp;&amp; (match[2].length &gt; 0);
+      return flag ? match[2] : null;
+    },
+    &quot;equalizer&quot;: {
+      &quot;targets&quot;: [],
+      &quot;filters&quot;: [],
+      &quot;storage&quot;: {},
+      &quot;source&quot;: null,
+      &quot;context&quot;: null,
+      &quot;gain&quot;: function () {
+        var filter = core.equalizer.context.createGain();
+        filter.channelCountMode = &quot;explicit&quot;;
+        filter.gain.value = 1;
+        return filter;
+      },
+      &quot;biquad&quot;: function (e) {
+        var filter = core.equalizer.context.createBiquadFilter();
+        filter.type = e.type || core.equalizer.storage.FT.LOWPASS;
+        filter.frequency.value = e.f || 0;
+        filter.gain.value = e.gain || 0;
+        filter.Q.value = 1;
+        return filter;
+      },
+      &quot;set&quot;: function (o) {
+        if (o) {
+          if (o.eq &amp;&amp; o.ch) {
+            if (core.equalizer.filters.length &gt; 0) {
+              if (core.equalizer.filters[0]) {
+                core.equalizer.filters[0].channelCount = o.ch.mono ? 1 : (core.equalizer.filters[0]._defaultChannelCount ? core.equalizer.filters[0]._defaultChannelCount : 2);
+                core.equalizer.filters.forEach(function (f, i) {
+                  f.gain.value = o.eq[i].gain;
+                });
+              }
+            }
+          }
+        }
+      },
+      &quot;toggle&quot;: function (state) {
+        if (state) core.equalizer.storage.state = state;
+        //
+        if (core.equalizer.source &amp;&amp; core.equalizer.context) {
+          if (core.equalizer.filters &amp;&amp; core.equalizer.filters.length) {
+            if (core.equalizer.storage.state === &quot;ON&quot;) {
+              core.equalizer.source.disconnect(core.equalizer.context.destination);
+              core.equalizer.source.connect(core.equalizer.filters[0]);
+            }
+            //
+            if (core.equalizer.storage.state === &quot;OFF&quot;) {
+              core.equalizer.source.disconnect(core.equalizer.filters[0]);
+              core.equalizer.source.connect(core.equalizer.context.destination);
+            }
+          }
+        }
+      },
+      &quot;load&quot;: function () {
+        if (core.log) console.error(&quot; &gt;&gt; Searching for video/audio elements...&quot;);
+        core.equalizer.filters = [];
+        delete core.equalizer.context;
+        //
+        core.equalizer.context = new AudioContext();
+        for (var i = 0; i &lt; core.equalizer.storage.eq.length; i++) {
+          var node = core.equalizer.storage.eq[i];
+          var filter = node.f ? core.equalizer.biquad(node) : core.equalizer.gain();
+          if (filter) {
+            core.equalizer.filters.push(filter);
+          }
+        }
+        //
+        if (core.log) console.error(&quot; &gt;&gt; Equalizer is loaded!&quot;);
+        core.equalizer.attach(2);
+      },
+      &quot;attach&quot;: function (w) {
+        if (!core.equalizer.context) core.equalizer.load();
+        else {
+          core.equalizer.targets.forEach(function (t, k) {
+            if (t.getAttribute(&quot;equalizer-state&quot;) !== &quot;attached&quot;) {
+              var src = t.src ? t.src : t.currentSrc;
+              if (src) {
+                t.setAttribute(&quot;equalizer-state&quot;, &quot;attached&quot;);
+                if (core.log) console.error(&quot; &gt;&gt; Equalizer is attached, loc&quot;, w, t.className);
+                if (document.location.hostname !== core.hostname(src)) {
+                  var crossorigin = t.getAttribute(&quot;crossorigin&quot;);
+                  if (!crossorigin) {
+                    if (src.substring(0, 5) !== &quot;blob:&quot;) {
+                      t.setAttribute(&quot;crossorigin&quot;, (crossorigin ? crossorigin : &quot;anonymous&quot;));
+                      if (t.src) t.src = t.src + '';
+                      else if (t.currentSrc) t.load();
+                    }
+                  }
+                }
+                //
+                try {
+                  core.equalizer.source = core.equalizer.context.createMediaElementSource(t);
+                  core.equalizer.filters[0]._defaultChannelCount = core.equalizer.source.channelCount ? core.equalizer.source.channelCount : 2;
+                  var target = core.equalizer.storage.state === &quot;OFF&quot; ? core.equalizer.context.destination : core.equalizer.filters[0];
+                  core.equalizer.source.connect(target);
+                  //
+                  for (var i = 0; i &lt; core.equalizer.filters.length; i++) {
+                    var current = core.equalizer.filters[i];
+                    var next = core.equalizer.filters[i + 1];
+                    //
+                    current.gain.value = core.equalizer.storage.eq[i].gain;
+                    if (next) current.connect(next);
+                  }
+                  //
+                  var last = core.equalizer.filters[core.equalizer.filters.length - 1];
+                  last.connect(core.equalizer.context.destination);
+                  window.top.postMessage({&quot;app&quot;: &quot;audio-equalizer&quot;, &quot;action&quot;: &quot;app-icon-normal&quot;}, '*');
+                } catch (e) {
+                  window.top.postMessage({&quot;app&quot;: &quot;audio-equalizer&quot;, &quot;action&quot;: &quot;app-icon-error&quot;}, '*');
+                }
+              }
+            }
+          });
+        }
+      }
+    }
+  };
+  //
+  core.equalizer.storage = data;
+  //
+  window.addEventListener(&quot;play&quot;, function (e) {
+    core.equalizer.targets.push(e.target);
+    core.equalizer.attach(0);
+  }, true);
+  //
+  window.addEventListener(&quot;message&quot;, function (e) {
+    if (e.data.app === &quot;audio-equalizer&quot;) {
+      if (e.data.action === &quot;app-set&quot;) core.equalizer.set(e.data.value);
+      if (e.data.action === &quot;app-toggle&quot;) core.equalizer.toggle(e.data.state);
+    }
+  }, false);
+  //
+  if (Audio) {
+    if (Audio.prototype) {
+      if (Audio.prototype.play) {
+        const play = Audio.prototype.play;
+        Audio.prototype.play = function () {
+          core.equalizer.targets.push(this);
+          core.equalizer.attach(1);
+          //
+          return play.apply(this, arguments);
+        };
+      }
+    }
+  }
+})({&quot;ch&quot;:{&quot;snap&quot;:false,&quot;mono&quot;:false},&quot;eq&quot;:[{&quot;label&quot;:&quot;master&quot;,&quot;gain&quot;:1},{&quot;label&quot;:&quot;64&quot;,&quot;f&quot;:64,&quot;gain&quot;:0,&quot;type&quot;:&quot;peaking&quot;},{&quot;label&quot;:&quot;32&quot;,&quot;f&quot;:32,&quot;gain&quot;:0,&quot;type&quot;:&quot;lowshelf&quot;},{&quot;label&quot;:&quot;125&quot;,&quot;f&quot;:125,&quot;gain&quot;:0,&quot;type&quot;:&quot;peaking&quot;},{&quot;label&quot;:&quot;250&quot;,&quot;f&quot;:250,&quot;gain&quot;:0,&quot;type&quot;:&quot;peaking&quot;},{&quot;label&quot;:&quot;500&quot;,&quot;f&quot;:500,&quot;gain&quot;:0,&quot;type&quot;:&quot;peaking&quot;},{&quot;label&quot;:&quot;1k&quot;,&quot;f&quot;:1000,&quot;gain&quot;:0,&quot;type&quot;:&quot;peaking&quot;},{&quot;label&quot;:&quot;2k&quot;,&quot;f&quot;:2000,&quot;gain&quot;:0,&quot;type&quot;:&quot;peaking&quot;},{&quot;label&quot;:&quot;4k&quot;,&quot;f&quot;:4000,&quot;gain&quot;:0,&quot;type&quot;:&quot;peaking&quot;},{&quot;label&quot;:&quot;8k&quot;,&quot;f&quot;:8000,&quot;gain&quot;:0,&quot;type&quot;:&quot;peaking&quot;},{&quot;label&quot;:&quot;16k&quot;,&quot;f&quot;:16000,&quot;gain&quot;:0,&quot;type&quot;:&quot;highshelf&quot;}],&quot;lastupdate&quot;:1612825802283,&quot;presets&quot;:[{&quot;name&quot;:&quot;Club&quot;,&quot;default&quot;:true,&quot;gains&quot;:[0,0,4.8,3.36,3.36,3.36,1.92,0,0,0]},{&quot;name&quot;:&quot;Live&quot;,&quot;default&quot;:true,&quot;gains&quot;:[-2.88,0,2.4,3.36,3.36,3.36,2.4,1.44,1.44,1.44]},{&quot;name&quot;:&quot;Party&quot;,&quot;default&quot;:true,&quot;gains&quot;:[4.32,4.32,0,0,0,0,0,0,4.32,4.32]},{&quot;name&quot;:&quot;Pop&quot;,&quot;default&quot;:true,&quot;gains&quot;:[0.96,2.88,4.32,4.8,3.36,0,-1.44,-1.44,0.96,0.96]},{&quot;name&quot;:&quot;Soft&quot;,&quot;default&quot;:true,&quot;gains&quot;:[2.88,0.96,0,-1.44,0,2.4,4.8,5.76,6.72,7.2]},{&quot;name&quot;:&quot;Ska&quot;,&quot;default&quot;:true,&quot;gains&quot;:[-1.44,-2.88,-2.4,0,2.4,3.36,5.28,5.76,6.72,5.76]},{&quot;name&quot;:&quot;Reggae&quot;,&quot;default&quot;:true,&quot;gains&quot;:[0,0,0,-3.36,0,3.84,3.84,0,0,0]},{&quot;name&quot;:&quot;Default&quot;,&quot;default&quot;:true,&quot;gains&quot;:[0,0,0,0,0,0,0,0,0,0]},{&quot;name&quot;:&quot;Rock&quot;,&quot;default&quot;:true,&quot;gains&quot;:[4.8,2.88,-3.36,-4.8,-1.92,2.4,5.28,6.72,6.72,6.72]},{&quot;name&quot;:&quot;Dance&quot;,&quot;default&quot;:true,&quot;gains&quot;:[5.76,4.32,1.44,0,0,-3.36,-4.32,-4.32,0,0]},{&quot;name&quot;:&quot;Techno&quot;,&quot;default&quot;:true,&quot;gains&quot;:[4.8,3.36,0,-3.36,-2.88,0,4.8,5.76,5.76,5.28]},{&quot;name&quot;:&quot;Headphones&quot;,&quot;default&quot;:true,&quot;gains&quot;:[2.88,6.72,3.36,-1.92,-1.44,0.96,2.88,5.76,7.68,8.64]},{&quot;name&quot;:&quot;Soft rock&quot;,&quot;default&quot;:true,&quot;gains&quot;:[2.4,2.4,1.44,0,-2.4,-3.36,-1.92,0,1.44,5.28]},{&quot;name&quot;:&quot;Classical&quot;,&quot;default&quot;:true,&quot;gains&quot;:[0,0,0,0,0,0,-4.32,-4.32,-4.32,-5.76]},{&quot;name&quot;:&quot;Large Hall&quot;,&quot;default&quot;:true,&quot;gains&quot;:[6.24,6.24,3.36,3.36,0,-2.88,-2.88,-2.88,0,0]},{&quot;name&quot;:&quot;Full Bass&quot;,&quot;default&quot;:true,&quot;gains&quot;:[4.8,5.76,5.76,3.36,0.96,-2.4,-4.8,-6.24,-6.72,-6.72]},{&quot;name&quot;:&quot;Full Treble&quot;,&quot;default&quot;:true,&quot;gains&quot;:[-5.76,-5.76,-5.76,-2.4,1.44,6.72,9.6,9.6,9.6,10.08]},{&quot;name&quot;:&quot;Laptop Speakers&quot;,&quot;default&quot;:true,&quot;gains&quot;:[2.88,6.72,3.36,-1.92,-1.44,0.96,2.88,5.76,7.68,8.64]},{&quot;name&quot;:&quot;Full Bass &amp; Treble&quot;,&quot;default&quot;:true,&quot;gains&quot;:[4.32,3.36,0,-4.32,-2.88,0.96,4.8,6.72,7.2,7.2]}],&quot;selected&quot;:{&quot;name&quot;:&quot;Default&quot;,&quot;default&quot;:true,&quot;gains&quot;:[0,0,0,0,0,0,0,0,0,0]},&quot;state&quot;:&quot;OFF&quot;,&quot;whitelist&quot;:[]})</script><svg:g
+   id="g1270"
+   transform="translate(0,-328)"><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929"
+     cx="808.90564"
+     cy="409.01489"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7"
+     cx="808.90564"
+     cy="420.37848"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-3"
+     cx="808.90564"
+     cy="431.74207"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-30"
+     cx="808.90564"
+     cy="443.10565"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-2"
+     cx="808.90564"
+     cy="454.46924"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-4"
+     cx="808.90564"
+     cy="465.83279"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-1"
+     cx="808.90564"
+     cy="477.19638"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-8"
+     cx="808.90564"
+     cy="488.55997"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-9"
+     cx="808.90564"
+     cy="499.92355"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-27"
+     cx="808.90564"
+     cy="511.28714"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-21"
+     cx="808.90564"
+     cy="522.6507"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-33"
+     cx="808.90564"
+     cy="534.01428"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-5"
+     cx="808.90564"
+     cy="545.37787"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-0"
+     cx="808.90564"
+     cy="556.74146"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-97"
+     cx="808.90564"
+     cy="568.10504"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-211"
+     cx="808.90564"
+     cy="579.46863"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-7"
+     cx="808.90564"
+     cy="590.83221"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-40"
+     cx="808.90564"
+     cy="602.1958"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-09"
+     cx="820.44196"
+     cy="499.92355"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-77"
+     cx="831.97827"
+     cy="499.92355"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-272"
+     cx="843.51459"
+     cy="499.92355"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-59"
+     cx="855.0509"
+     cy="499.92355"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-335"
+     cx="866.58722"
+     cy="499.92355"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-16"
+     cx="878.12354"
+     cy="499.92355"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-55"
+     cx="889.65985"
+     cy="499.92355"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-45"
+     cx="901.19617"
+     cy="499.92355"
+     r="2.5169995" /><svg:circle
+     style="fill:#00286e;fill-opacity:1;stroke:none;stroke-width:0"
+     id="path929-7-167"
+     cx="912.73248"
+     cy="499.92355"
+     r="2.5169995" /></svg:g><svg:text
+   xml:space="preserve"
+   style="font-size:103.117px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;stroke-width:2.57794"
+   x="1042.3605"
+   y="85.692871"
+   id="text1274"><svg:tspan
+     sodipodi:role="line"
+     id="tspan1272"
+     x="1042.3605"
+     y="85.692871"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Trebuchet MS';-inkscape-font-specification:'Trebuchet MS';text-align:center;text-anchor:middle;stroke-width:2.57794" /></svg:text><svg:text
+   xml:space="preserve"
+   style="font-size:40px;line-height:1.25;font-family:'Trebuchet MS';-inkscape-font-specification:'Trebuchet MS';letter-spacing:4.06223px;white-space:pre;inline-size:134.37;fill:#dc6e1e;fill-opacity:1"
+   x="1055.8877"
+   y="12.585074"
+   id="text1278"
+   transform="matrix(2.6315611,0,0,2.6315611,-1840.6923,185.13581)"><svg:tspan
+     x="1055.8877"
+     y="12.585074"><svg:tspan
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Trebuchet MS';-inkscape-font-specification:'Trebuchet MS';fill:#dc6e1e;fill-opacity:1">LUTH</svg:tspan></svg:tspan></svg:text><svg:text
+   xml:space="preserve"
+   style="font-size:40px;line-height:1.25;font-family:'Trebuchet MS';-inkscape-font-specification:'Trebuchet MS';letter-spacing:1.91651px;word-spacing:0px;white-space:pre;inline-size:940.688;fill:#dc6e1e;fill-opacity:1"
+   x="1055.8877"
+   y="12.585074"
+   id="text1278-5"
+   transform="matrix(1.1531399,0,0,1.1531399,-1099.5871,458.59282)"><svg:tspan
+     x="1055.8877"
+     y="12.585074"><svg:tspan
+       style="fill:#dc6e1e;fill-opacity:1">Laboratoire de l’Univers et de ses Théories</svg:tspan></svg:tspan></svg:text></svg:svg>

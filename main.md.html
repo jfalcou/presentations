@@ -15,7 +15,14 @@
 <br>
 Joel FALCOU - Vincent REVERDY
 <br>
-<center><small>![](images/lri.jpg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
+<center><small>
+    ![](images/lri.jpg style="height: 3rem")&nbsp;&nbsp;&nbsp;
+    ![](images/codereckons.png style="height: 3rem")&nbsp;&nbsp;&nbsp;
+    ![](images/logo_psl.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;
+    ![](images/logo_ens.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;
+    ![](images/logo_obspm_luth.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;
+    ![](images/logo_ncsa.svg style="height: 3rem")
+</small></center>
 <center>![](images/ccby40.png style="height: 0.7rem")</center>
 <small><small>Powered by Markdeep and Markdeep-Slides</small></small>
 
@@ -877,7 +884,51 @@ Ouput:
 
 ## Definition & C++20 status
 
-### SECTION
+**<script type="preformatted">`template <class T, int N> array`</script>**
+    
+    * Non-Type Template Parameter
+
+### Before C++20
+    * An integral type
+    * An enumeration type
+    * A pointer type
+    * A pointer to member type
+    * `std::nullptr_t`
+    * A lvalue reference type
+
+---
+
+## Definition & C++20 status
+
+**<script type="preformatted">`template <class T, int N> array`</script>**
+    
+    * Non-Type Template Parameter
+
+### Since C++20
+    * An integral type
+    * An enumeration type
+    * A pointer type
+    * A pointer to member type
+    * `std::nullptr_t`
+    * A lvalue reference type
+    * **A floating-point type**
+    * **A literal class type (with some restrictions)**
+
+---
+
+## Opening a new era of template metaprogramming
+
+### Generic syntax
+**<script type="preformatted">`template <auto Value> class_type`</script>**
+
+### Generic NTTPs + Expression Template = EDSL mini-compilers
+**<script type="preformatted">`template <auto Expression> edsl_compiler`</script>**
+
+    * NTTP = Non-Type Template Parameter
+    * EDSL = Embedded Domain-Specific Language
+    
+    
+### Challenge -> Defining array shapes
 
 ---
 
@@ -887,7 +938,7 @@ Ouput:
   * Arrays gather data in a n-dimensional grid
   * The number of effective dimensions is supposed **known at compile time**
   * The number of elements along each dimension may vary
-  * The number of elements along a given dimension may be known at compile time
+  * The number of elements along a given axis may be known at compile time
   * The initial ordering of those sizes is **domain specific** and **arbitrary**
 
 ****************************************************************************************************
@@ -906,14 +957,21 @@ Ouput:
 
 ## Removing code duplication with NTTPs
 
-### Problem
+### Problems: type unsafe / verbosity
 
-<!--
-Reprendre l'exemple de mdspan (juste avec des nombres)
-2 types différents dynamique/statique
-Rajouter de la sémantique en faisant des objets
-=> objet constexpr
--->
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+using my_span = std::mdspan<double, extents<3, -1, 7>>;
+using my_other_span = std::mdspan<double, extents<3, std::dynamic_extent, 7>>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+### With generic NTTPs: passing domain information deep into compilers
+  * Generic: unified interfaces (static/dynamic sizes)
+  * High-Performance: AST manipulation and optimization
+  * Expressive: terse + precise
+  
+**-> Adding semantic and type-safety through constexpr objects**
 
 ---
 
@@ -924,7 +982,7 @@ Rajouter de la sémantique en faisant des objets
   * Make it usable as an NTTP
   * Provides helpers to smooth definition of array
 
-### Proposed interface
+### Proposed interface: what we want to achieve
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 array<float, _3D>             x;                  // Uninitialized 3D array with dynamic size
@@ -948,7 +1006,7 @@ array<float, s[10]>          w;                  // Uninitialized 3D array with 
   * `sizeof(array)`/`sizeof(view)` are minimal
   * Safer and more expressive interface
 
-### Proposed interface
+### Proposed interface: what we want to achieve
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 array<float, _3D>             x;                  // Uninitialized 3D array with dynamic size
@@ -965,12 +1023,204 @@ array<float, s[10]>          w;                  // Uninitialized 3D array with 
 
 ---
 
+## Shaper
 
-<!--
-Présenter ça comme ce que l'on veut faire
+### A shape remembering the sequence of operations it was made from
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template <typename... Ops> struct shaper {
+  using type = shaper<Ops...>;
 
--->
+  static constexpr auto size_map() {return typename type_map<static_size, Ops...>::type{};}
+  static constexpr std::ptrdiff_t size() {return sizeof...(Ops);}
+  static constexpr bool is_fully_static = size_map().size == sizeof...(Ops);
 
+  constexpr shaper()  = default;
+  constexpr std::ptrdiff_t at(std::size_t i) const {return data_[i];}
+
+  template <typename... X> constexpr auto append(X... x);
+
+  template <typename... Args> constexpr shaper(shaper<Args...> other, std::ptrdiff_t i) : data_(other.append(i)) {}
+
+  constexpr shaper<Ops...,dynamic_size> operator()() const { return {*this, -1}; }
+  constexpr shaper<Ops...,static_size>  operator[](std::ptrdiff_t i) const { return {*this,  i}; }
+
+  std::array<std::ptrdiff_t, sizeof...(Ops)> data_;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Extent
+
+### Helpers
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+inline constexpr detail::shaper extent = {};
+
+// Dynamic pre-rendered dimension shaper
+inline constexpr auto _0D = extent;
+inline constexpr auto _1D = extent();
+inline constexpr auto _2D = extent()();
+inline constexpr auto _3D = extent()()();
+inline constexpr auto _4D = extent()()()();
+
+template<std::size_t N>
+inline constexpr auto _nD = []<std::size_t... I>(std::index_sequence<I...> const&) {
+  return detail::shaper<decltype(detail::dynamic_size(I))...>{};
+}(std::make_index_sequence<N>{});
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Shape
+
+### A descriptor type to handle multidimensional array extents
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename... T> shape(T... s) -> shape< _nD<sizeof...(T)> >;
+
+template<auto Shaper> struct shape {
+    // Types and constants
+    using size_map = decltype(Shaper.size_map());
+    static constexpr std::ptrdiff_t static_size = Shaper.size();
+    static constexpr std::ptrdiff_t storage_size = static_size - size_map::size;
+    using storage_type = std::array<std::ptrdiff_t,storage_size>;
+    using stride_type = unit_stride<static_size>;
+    static constexpr bool is_dynamic = storage_size >= 1;
+    static constexpr bool is_fully_dynamic = storage_size == static_size;
+    static constexpr bool is_fully_static = storage_size == 0;
+
+    // Lifecycle
+    constexpr shape() noexcept;
+    template<std::same_as<detail::axis>... Extent> constexpr shape(Extent... s) noexcept;
+    template<auto OtherShaper> constexpr shape(shape<OtherShaper> const&) noexcept;
+    template<auto OtherShaper> constexpr explicit shape(shape<OtherShaper> const&) noexcept;
+    /* ... */
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Shape
+
+### A descriptor type to handle multidimensional array extents
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<auto Shaper> struct shape {
+    /* ... */
+    // Access and capacity
+    static constexpr std::ptrdiff_t size() noexcept;
+    template<std::size_t I> constexpr auto get() const noexcept;
+    void swap(shape&) noexcept;
+    constexpr std::ptrdiff_t nbdims() const noexcept;
+    constexpr std::ptrdiff_t numel() const noexcept;
+    constexpr auto as_stride() const;
+    template<auto Shaper2> constexpr bool contains( shape<Shaper2> const&) const noexcept;
+    template<auto Shaper2> constexpr bool strictly_contains( shape<Shaper2> const&) const noexcept;
+    
+    // Operators
+    template<auto Shaper2> constexpr bool operator==(shape<Shaper2> const&) const noexcept;
+    template<auto Shaper2> constexpr bool operator!=(shape<Shaper2> const&) const noexcept;
+    friend std::ostream& operator<<(std::ostream& os, shape const& s);
+
+    // Storage
+    storage_type storage_;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+
+## Index list
+
+### Augmented static integer list for mapping known unit values
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<std::size_t... I> struct index_list {
+  static constexpr std::size_t size = sizeof...(I);
+  template<std::size_t J> using append = index_list<I...,J>;
+  
+  // Is N in the set of known unit indexes ?
+  static constexpr bool contains(std::size_t N) noexcept {
+    bool found[] = { (I==N)... };
+    for(auto f : found) if(f) return true;
+    return false;
+  }
+  
+  // Find the actual dynamic index of a non-unit index
+  template<std::size_t Size> static constexpr std::size_t locate(std::size_t N) noexcept {
+      std::size_t idx[Size] = {};
+      ((idx[I] = 1), ...);
+      std::size_t pos = 0;
+      for(std::size_t i=0;i<N;++i) pos += (1-idx[i]);
+      return pos;
+  }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## View builder
+
+### Deducing shape and stride from settings
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template <typename Type, auto... Settings>
+struct view_builder
+{
+  using shaper_t = detail::shaper<detail::dynamic_size,detail::dynamic_size>;
+
+  static constexpr auto opt_    = rbr::settings(Settings...);
+
+  static constexpr auto shape_  = kwk::shape<opt_[ option::shape | shaper_t{} ] >{};
+  static constexpr auto stride_ = opt_[ option::stride | shape_.as_stride() ];
+
+  static constexpr bool is_dynamic      = shape_.is_dynamic;
+  static constexpr bool is_fully_static = shape_.is_fully_static;
+
+  using span_base       = detail::view_span<Type*>;
+  using access_base     = detail::view_access<shape_, stride_>;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Array builder
+
+### Deriving from `view_builder`
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template <typename Type, auto... Settings>
+struct array_builder : view_builder<Type, Settings...>
+{
+  using base_t = view_builder<Type,Settings...>;
+
+  static constexpr auto storage_ = []() {
+      if constexpr(base_t::shape_.is_fully_static) return base_t::opt_[option::storage | stack_];
+      else                                         return base_t::opt_[option::storage | heap_ ];
+  }();
+
+  static constexpr bool use_allocator = storage_.use_allocator();
+  using allocator_type = typename decltype(storage_)::allocator_type;
+
+  using type = std::conditional_t<
+    use_allocator,
+    heap_storage<Type, allocator_type, Settings...>,
+    stack_storage<Type,base_t::shape_,base_t::stride_>
+  >;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+  
 <!--
 Présenter tout le mécanisme de shape sans nécessairement aller dans le code
 index_map / bit_map
@@ -987,6 +1237,20 @@ Conclusion partie: améliore l'API
 Exploiter les infos proprement pour générer l'implem optimale
 -->
 
+## Generic NTTPs - Conclusion
+
+### Open new possibilities in terms of design
+  * Better APIs
+  * More generic interfaces
+  * Use of domain-specific information for high-levels of optimization
+
+### Multidimensional array shapes
+  * Non-incremental approach
+  * Unified static/dynamic array abstraction
+  * Terse, rich, and natural syntax
+  * High-levels of optimization for numerical arrays
+
+### Generic NTTPs + Expression Template = templates as EDSL compilers
 
 <!------------------------------------------------------------------------------------------------->
 <!--
