@@ -15,7 +15,7 @@
 <small><em><span class="current-date"></span></em></small>
 <br>
 <br>
-Joel FALCOU et al.
+Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ
 <br>
 <center><small>![](images/lisn.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
 <center>![](images/ccby40.png style="height: 0.7rem")</center>
@@ -233,10 +233,10 @@ y = sqrt[ignore_first(1)][raw](x);  // combines with masks
 wide<float, fixed<4>> x;
 
 // Direct index pattern -- not very portable
-auto rx = x[ pattern<3,2,1,0> ];
+auto rx = eve::shuffle(x, pattern<3,2,1,0> );
 
 // Parametric swizzle - use constexpr lambda
-auto rx2 = x[ as_pattern{ [](auto i, auto c) { return c-i-1; }}];
+auto rx2 = eve::shuffle(x, as_pattern{ [](auto i, auto c) { return c-i-1; }});
 
 //Using a named swizzle
 auto rx2 = reverse(x);
