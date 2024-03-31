@@ -8,72 +8,138 @@
 <meta charset="utf-8" lang="en">
 <!------------------------------------------------------------------------------------------------->
 
-**DOES SOFTWARE MATURES LIKE CHEESE?**
+**The Expressive Vector Engine**
 <br>
-    THE COMING OF AGE OF AN HPC LIBRARY
+    SIMD in C++ 20 Goes Brrrr
 <br>
 <small><em><span class="current-date"></span></em></small>
 <br>
 <br>
-Joel FALCOU
+Joel FALCOU et al.
 <br>
-<center><small>![](images/lri.jpg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
+<center><small>![](images/lisn.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
 <center>![](images/ccby40.png style="height: 0.7rem")</center>
 <small><small>Powered by Markdeep and Markdeep-Slides</small></small>
 
 ---
 
-## The Genesis of E.V.E.
+# What, Who, Why ?
+
+---
+
+## SIMD : The Forgotten Parallel Paradigm
+
+### Single Instruction Single Data
+  * The usual, run of the mill, ALU.
+  * Maybe more complicated : out-of-order, micro-instructions, etc...
+
+<center>![](images/sisd.png)</center>
+
+---
+
+## SIMD : The Forgotten Parallel Paradigm
+
+### Single Instruction Single Data
+  * Operations are run on each of the register's lanes.
+  * We expect a speedup from the **width** of the registers.
+
+<center>![](images/simd.png)</center>
+
+---
+
+## SIMD : The Forgotten Parallel Paradigm
 
 ### 1001 Flavors of SIMD
-  * Available on all major CPU yet used sporadically
-  * SIMD instruction set provides large registers
-  * Operations are performed on multiple data at once
-  * Usually used by using intrinsics or praying to the AutoVectorizer Gods
-
-### E.V.E - A SIMD wrapper library
-  * Started as a OCAML wrapper for PPC Altivec (2005)
-  * Evolved into a Altivec/SSE2 wrapper (2006)
-  * Once hidden inside NT2 (2008-2014), then as Boost.SIMD (2014-2017)
-  * Now under reconstruction as a C++20 library
-
----
-
-## A Slice of Performances
-
-### Main E.V.E features
-  * Provides a type-based wrapper around most current SIMD instruction sets
-  * Strongly oriented toward numerical applications
-  * User-level trade-off management (fast? precise? you decide!)
-  * Designed as to take advantage of most of latest C++ standard
-
-### Want to know more ?
-  * Find it on [Github](https://github.com/jfalcou/eve)
-  * Play with it on [Compiler Explorer](https://godbolt.org/z/qzbf4G)
-  * Have look at the [in-progress documentation](https://jfalcou.github.io/eve/)
-  * Bug me after this talk ;)
+  * x86
+    * **128 bits**: SSE2, SSE3, SSSE3, SSE4.1, SSE4.2
+    * **256 bits**: AVX, AVX2, XOP
+    * **512 bits**: AVX512 and its myriad of sub-genre
+  * ARM
+    * **128 bits**: NEON, ASIMD
+    * **128, 256, 512** bits: SVE, SVE2
+  * PowerPC
+    * **128 bits**: Altivec on Power7+
+    * **256 bits**: Blue Gene Q QPX
+  * RISC-V, WASM, etc ...
 
 ---
 
-## A Slice of Elegance
+## SIMD : The Forgotten Parallel Paradigm
 
-### [A Portable `simd_strlen`](https://godbolt.org/z/qezheM)
+### Why exploiting this ?
+  * Some application can't use GPGPUS
+  * Already everywhere
+  * Less energy-demanding
+
+### How to exploit this ?
+  * Auto-vectorization
+  * OpenMP pragmas, special compilers (ISPC)
+  * `std::execution::unseq`, [HPX](https://github.com/STEllAR-GROUP/hpx)
+  * Specialized tools: [Halide](https://www.youtube.com/watch?v=1ir_nEfKQ7A), [simdjson](https://github.com/simdjson/simdjson)
+  * Write it by hand
+
+---
+
+## Manual SIMD? In this economy?
+  * It's easy, let's just write SIMD `int32 * int32 + int32`.
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-std::size_t simd_strlen(unsigned char const* s)
-{
-  eve::aligned_ptr aligned_s = eve::previous_aligned_address(s);
+// SSE2 : Good Luck :)
 
-  eve::wide     cur     = eve::unsafe(eve::load)(aligned_s);
-  auto          ignore  = eve::ignore_first(s - aligned_s.get());
-  std::optional match   = eve::first_true[ignore](cur == 0);
+// SSE4
+__m128i fma(__m128i a, __m128i b, __m128i c)
+{
+  return _mm_mullo_epi32(a, _mm_add_epi32(b,c));
+}
+
+// Altivec
+__vector int fma(__vector int a, __vector int b,  __vector int c)
+{
+  return vec_cts(vec_madd( vec_ctf(a,0), vec_ctf(b,0), vec_ctf(c,0)),0);
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## What's E.V.E ?
+
+### Main E.V.E features
+  * C++ 20 wrapper around SIMD intrinsincs
+    * Library of core types
+    * Algorithms
+    * 250+ numerical functions
+  * Supports all x86, ARM, AARCH64 and PPC flavors
+  * Boost license
+  * Team Effort : **Dennis Yaroshevskiy**, **Jean-Thierry Lapresté**, myself.
+
+### Info Dump
+  * Find it on [Github](https://github.com/jfalcou/eve)
+  * Play with it on [Compiler Explorer](https://godbolt.org/z/qzbf4G)
+  * Have look at the [documentation](https://jfalcou.github.io/eve/)
+
+---
+
+## E.V.E in a nutshell
+
+### [A Portable `simd_strlen`](https://codereckons.com/tools/z/1YW5rd)
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+std::size_t strlen_example(unsigned char const* s)
+{
+  eve::wide<std::uint8_t> const zeroes{0};
+  eve::aligned_ptr        aligned_s = eve::previous_aligned_address(s);
+  eve::wide<std::uint8_t> cur       = eve::unsafe(eve::load)(aligned_s);
+  auto                    ignore    = eve::ignore_first(s - aligned_s.get());
+  std::optional           match     = eve::first_true[ignore](cur == zeroes);
 
   while (!match)
   {
-    aligned_s += wide::static_size;
+    aligned_s += eve::wide<std::uint8_t>::size();
     cur = eve::unsafe(eve::load)(aligned_s);
-    match = eve::first_true(cur == 0);
+    match = eve::first_true(cur == zeroes);
   }
 
   return static_cast<std::size_t>(aligned_s.get() + *match - s);
@@ -83,246 +149,103 @@ std::size_t simd_strlen(unsigned char const* s)
 
 ---
 
-## The Message of this Talk
-
-### Library design is two-sided
-  * User-facing API must be compelling to use
-  * Dev-facing API must enable fast development
-
-### How do three standards change the library?
-  * New language features
-  * New idioms
-
-### How the vision of a long term project changes?
-  * The importance of user API perception
-  * Design for usability
+# E.V.E - A SIMD Wrapper
 
 ---
 
-# Type Interface
+## `eve::wide`
 
-<center>![](images/camembert.png style="height: 8rem")</center>
-
----
-
-## Type Interfaces as Public Relationships
-
-### The Context
-  * First version of E.V.E provided a `pack` abstraction for SIMD registers
-  * `pack` was complete with array and tuple-like interface
-  * One can even iterate over the scalar contents
-
-  <script type="preformatted">
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-  // Definition
-  template<typename Type, std::size_t Cardinal, typename ABI = ...> struct pack;
-
-  // Usage
-  pack<int,8> x;
-
-  x[0] = 1;
-  for(std::size_t i=1;i<x.size();++i)
-    x[i] = 2* x[i-1];
-
-  std::cout << x[x.size()-1] << "\n";
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  </script>
-
----
-
-## Type Interfaces as Public Relationships
-
-### The Issues
-  * People kept trying to use `pack`, an abstraction of a register, as a genuine array
-  * Most frequent question : "Why does `pack<float,735>` doesn't work?"
-  * People will often just write bad scalar code instead of using SIMD
-  * Implementation required heavy aliasing hand-waving
-
-### The Solution
-  * Renamed `pack` (smells like an array) to `wide` (descriptor of the register)
-  * Cut off the `Type` x `Integer` interface of `pack` in favor of an all-type one
-  * Remove the Iterator and Array interface in favor of explicit `get`/`set`
-  * **[C++11]** Provide a lambda based constructor to prevent people iterating at initialization
-  * **[C++11]** Statically assert sizes are actual SIMD compatible size
-
----
-
-## Type Interfaces as Public Relationships
-
-### The Solution
+### Objectives
+  * Abstract away SIMD register into typed wrappers.
+  * Defined by an **element type** and the numbers of **lanes**.
+  * Statically isolate ABI.
+  * All E.V.E functions `just work`® on them like on scalars.
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-// Definition
-template<typename Type, typename Cardinal, typename ABI = ...> struct wide;
+// Lanes adapt to compilation options (portable)
+wide<int>   x{4};                                       // x is [4 4 4 ... 4]
+wide<float> y{[](auto i, auto) { return 1.f/(1+i); }};  // y is [1 0.5 0.333 ...]
 
-// Usage
-wide<int,fixed<8>> x( [](auto i, auto c) { return 1+i; });
+// Memory interactions
+double data[] = {12.13,466.55,92.09,73.721,5.8246,194.637};
+wide<double> w{&data[2]};                               // w is [92.09 73.721 ...]
 
-std::cout << x.get(x.size()-1) << "\n";
+// Specific lanes count (less portable)
+wide<double, fixed<4>> z{1.697,0.25,-3,6.9};
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
-### Specifics
-  * `fixed` is a **Cardinal type** and asserts size are SIMD compatible
-  * `fixed` provides internal types to generically compute an upcast or downcast Cardinal
-  * Other types are provided to discriminate between scalar and SIMD register of size 1
-  * The explicit nature of `get` makes you pause to think about it
+---
+
+## E.V.E Functions
+
+### Scope
+  * Basic operations : arithmetic, bitwise, basic math.
+  * A fully vectorized `<cmath>`.
+  * A fully vectorized sets of Special functions, Bessel functions, combinatorial functions.
+  * Polynomial evaluation scheme.
+  * Intra-register reductions.
+  * Swizzling and shuffling.
+
+### Specificities
+  * All E.V.E functions are Callable Objects.
+  * Best implementation is found and generated at compile-time.
+  * Supports for masking.
+  * Supports for user-specified semantic changes.
 
 ---
 
-## Type Interfaces as Public Relationships
+## E.V.E Functions
 
-### Assessing the Situation
-  * Users have been trained to recognize API by name
-  * If it looks like an array, why can't I use it as such?
-  * Our mistake was to fall into the Uncanny Valley of APIs
+### Masking and Semantic Modifiers
 
-!!! note: Our Findings
-    * API are not just about **adding** but also about **removing**.
-    * Don't over mimic existing type if there are "ifs" and "buts"
-    * Prefer semantic-rich types to simple integral constants if possible
-    * *"Make APIs that are easy to use correctly and hard to use incorrectly"*, Scott Meyers
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+wide<int> a,b,c;
+wide<float> x,y;
 
----
+c = c + 4;                          // c = c+4
+c = add[a<b](c,4);                  // c = c+4 when a<b else c
+c = c * b;                          // c = c*b
+c = mul[ignore_first(2)](c,b);      // c = c*b except for first 2 values
 
-# Functions & Objects
+x = exp(y);                         // Regular exp call
+a = add[saturated](b,c);            // Addition with saturation
+x = exp[pedantic](y,z);             // exp with special cases for denormals/infinites
+x = min[numeric](x,y);              // minimum without taking NaNs into account
+x = sqrt[raw](x);                   // sqrt with fast implementation, no error checking
 
-<center>![](images/beaufort.png style="height: 8rem")</center>
-
----
-
-## Functions: The Powerhouse of Numerical Libraries
-
-### Objectives
-  * SIMD implementation in E.V.E need to be reusable
-  * Overload should be possible over architecture, instruction sets, types
-  * Adding special case for specific optimization must be allowed
-  * Easy-to-use, Easy-to-discover API
-
-### Initial Design
-  * E.V.E functions were 50% functions, 50% functions calling Callable Object internally
-  * Used Boost.Dispatch, a generic version of tag dispatching
-  * Some cases required resolving multiple overload resolutions
-  * Advantage: compile at 11, go get lunch, compilation is ready for coffee
+y = sqrt[ignore_first(1)][raw](x);  // combines with masks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
-## Functions: The Powerhouse of Numerical Libraries
+## E.V.E Functions
 
-### Objectives
-  * SIMD implementation in E.V.E need to be reusable
-  * Overload should be possible over architecture, instruction sets, types
-  * Adding special case for specific optimization must be allowed
-  * Easy-to-use, Easy-to-discover API
+### Sample Swizzle
+  * **[C++20]** Use a `consteval` mapping of patterns to implementations.
+  * No need to remember which tricks work for which architectures.
 
-### New Design
-  * **[C++11/17]** E.V.E uses (inline) Callable Object that calls specific optimized functions
-  * **[C++11]** Use objects as type parameters
-  * **[C++11]** New API due to adding members to said Callable
-  * **[C++14]** Higher-order functions as decorators
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+wide<float, fixed<4>> x;
 
----
+// Direct index pattern -- not very portable
+auto rx = x[ pattern<3,2,1,0> ];
 
-## Functions: The Powerhouse of Numerical Libraries
+// Parametric swizzle - use constexpr lambda
+auto rx2 = x[ as_pattern{ [](auto i, auto c) { return c-i-1; }}];
 
-### Types as parameters
-  * Some functions require a type as parameter
-  * But some people are still scared of templates
-  * Use a throw-away object to pass type to the function
-
-  <script type="preformatted">
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-  // Definition
-  template<typename T> struct as { using type = T; };
-
-  inline constexpr as<double> double_ = {};
-  inline constexpr as<float>  single_ = {}; // etc...
-
-  // Usage
-  wide<int>   w;
-  wide<float> x = bit_cast(w, as<wide<float>>()); // use explicit type
-  auto        y = bit_cast(w, as(x));             // use the same type as x
-  auto        z = convert(x, single_);            // use pre-made type
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  </script>
+//Using a named swizzle
+auto rx2 = reverse(x);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
-## Functions: The Powerhouse of Numerical Libraries
-
-### Adding API on top of Callables
-  * SIMD has supports for conditionally masked operations
-  * Acts more as semantic modifications than parameters
-  * E.V.E functions can be passed conditionals via `operator[]`
-  * Masking capability is defined on a per function basis via traits
-
-  <script type="preformatted">
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-  // Usage
-  wide<int> a,b,c;
-
-  c = c + 4;                      // c = c+4
-  c = add[a<b](c,4);              // c = c+4 when a<b else c
-
-  c = c * b;                      // c = c*b
-  c = mul[ignore_first(2)](c,b);  // c = c*b except for first 2 values
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  </script>
-
----
-
-## Functions: The Powerhouse of Numerical Libraries
-
-### Higher-Order Functions as decorators
-  * SIMD implementation is full of trade-off: speed, precision, standard conformance
-  * As functions are Callables Objects, pass them to decorator Callables
-  * Returns a properly setup lambda selecting the correct implementation in a lazy way
-  * Decorators are combinable, saving names from design space
-
-  <script type="preformatted">
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-  struct pedantic_
-  {
-    template<typename Callable> constexpr auto operator()(Callable&& f) noexcept
-    {
-      return  [func = std::forward<Callable>(f)]<typename... Args>(Args&&... args)
-              {
-                return func( pedantic_{}, std::forward<Args>(args)...);
-              };
-    }
-  };
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  </script>
-
----
-
-## Functions: The Powerhouse of Numerical Libraries
-
-### Higher-Order Functions as decorators
-  * SIMD implementation is full of trade-off: speed, precision, standard conformance
-  * As functions are Callables Objects, pass them to decorator Callables
-  * Returns a properly setup lambda selecting the correct implementation in a lazy way
-  * Decorators are combinable, saving names from design space
-
-  <script type="preformatted">
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-  // Usage
-  wide<float> x,y;
-
-  x = exp(y);                   // Regular exp call
-  a = saturated(add)(b,c);      // Addition with saturation
-  x = pedantic(exp)(y,z);       // exp with special cases for denormals/infinites
-  x = numeric(min)(x,y);        // minimum without taking NaNs into account
-  x = raw(sqrt)(x);             // sqrt with fast implementation, no error checking
-
-  y = diff(pedantic)(sqrt)(x);   // differential, pedantic square root
-  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  </script>
-
----
-
-## Implementation of Architecture-Optimized Callables
+## Implementation of E.V.E Callables
 
 ### The Issues
   * A typical E.V.E functions may have had 4-8 overloads
@@ -335,22 +258,6 @@ std::cout << x.get(x.size()-1) << "\n";
   * **[C++20]** Use Concepts to overload on SIMD architecture
   * **[C++17]** Use `if constexpr` to write code based on available SIMD instructions sets
   * **[C++14/17]** Use enum based categorization to simplify type recognition
-
----
-
-## Implementation of Architecture-Optimized Callables
-
-### The Issues
-  * Each SIMD architecture register has a given size in bits: 128, 256, etc...
-  * E.V.E. calls those family of registers a **SIMD ABI**: eg. `x86_256`
-  * All available ABI of a given architecture models this architecture Concept
-  * E.g: the `x86_abi` concept is modeled by the `x86_128`, `x86_256` and `x86_512` type
-
-### Using Concepts to discriminate architectures
-  * This ABI plays a part in the overload resolutions
-  * A trait computing the ABI associated to a Type/Cardinal pair is available
-  * A Concept for each of those ABI based on this trait is defined
-  * Overload based on ABI dramatically reduces the number of overloads to consider
 
 ---
 
@@ -377,47 +284,6 @@ template<typename Type, typename Cardinal> consteval auto abi_of()
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
-
----
-
-## Implementation of Architecture-Optimized Callables
-
-### Concepts for SIMD ABI
-  * Used in functions to discriminate optimization strategies
-  * Minimize the number of overloads of entry-points
-  * Reduced compile time **by a factor of 3**
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<typename T, typename N, x86_abi ABI>
-auto add(wide<T,N,ABI> lhs, wide<T,N,ABI> rhs)
-{
-  // Do something with X86 SIMD instruction sets
-}
-
-template<typename T, typename N, non_native_abi ABI> // For all other cases
-auto add(wide<T,N,ABI> lhs, wide<T,N,ABI> rhs)
-{
-       if constexpr( is_aggregated_v<ABI> ) return aggregate(add,lhs,rhs);
-  else if constexpr( is_emulated_v<ABI>   ) return map(add,lhs,rhs);
-}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## Implementation of Architecture-Optimized Callables
-
-### The Issues
-  * SIMD instruction sets are widly divergent even for a given ABI
-  * Types, micro-architectures, etc all play a role
-  * How to be able to write the most efficient code with the least overloads?
-
-### `if constexpr` for intrinsics selection
-  * Use SPY to select instructon set at compile-time
-  * Provide a type -> enumeration function to **categorize** types
-  * Categories are build as bitfield encoding base type, size and cardinal
-  * Nest `if constexpr` according to the optimisation we want to obtain
 
 ---
 
@@ -450,107 +316,114 @@ template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T
 
 ---
 
-## Functions: The Powerhouse of Numerical Libraries
-
-### Assessing the Situation
-  * Functions as Objects is a very valuable API design tool
-  * Names is a very small design space. Protect it
-  * Our mistake was to be to clever in implementation, Keep It Stupid Simple
-
-!!! note: Our Findings
-    * Concept and `if constexpr` are great to structure large overload set
-    * HOF makes API design easier on name finding
-    * Don't be shy to try amping up the Object side of Function Objects
-    * Looking forward `std::tag_invoke`
+# E.V.E - SIMD-enabled Algorithms
 
 ---
 
-# Other API Decisions
+## E.V.E Algorithms
 
-<center>![](images/nectaire.png style="height: 8rem")</center>
+### Objectives
 
----
-
-## Abstraction for Optimizations
-
-### The Issues
-  * Some SIMD idioms requires complicated knowledge or setup
-  * They are usually non-trivial for the users
-  * We could not wait for the users to discover them
-
-### Example: register swizzling
-  * SIMD registers can have their content moved around
-  * But each instruction set has different rules for this
-  * How to have users not being left out by not using the correct swizzle ?
-  * *"Library design for compilation time"* as put by Victor Zverovich
+### Proposed API
 
 ---
 
-## Abstraction for Optimizations
+## E.V.E Algorithms
 
-### Sample Swizzle
+### `eve::find_if`
+
+<center>![](images/find_if.png)</center>
+
+---
+
+## E.V.E Algorithms
+
+### `eve::remove_if`
+
+<center>![](images/remove_if.png)</center>
+
+---
+
+## Interaction with `struct`
+
+### [High-school Physics](https://codereckons.com/tools/z/65r69n)
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-wide<float, fixed<4>> x;
+auto update(eve::like<ball> auto const& b, float dt, float g)
+{
+  auto falling = b;
+  auto bounced = b;
 
-// Direct index pattern -- not very portable
-auto rx = x[ pattern<3,2,1,0> ];
+  // Update position
+  position(falling) += speed(falling)*dt;
 
-// Parametric swizzle - use constexpr lambda
-auto rx2 = x[ as_pattern{ [](auto i, auto c) { return c-i-1; }}];
+  // Update velocity with gravity
+  speed(falling)    -= g*dt;
 
-// Parametric swizzle - using pre-defined pattern
-auto rx2 = x[ reverse_n<4> ];
+  // Compute the bounced ball case
+  speed(bounced)    *= -elasticity(bounced);
+
+  // Select the proper one based on position
+  return eve::if_else( position(falling) <= 1e-4, bounced, falling);
+}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
-### Benefits
-  * **[C++20]** Use a `consteval` mapping of patterns to implementation
-  * No need to remember which tricks work for which architecture
-  * Compile-time is mitigated by using `consteval` functions over template classes
+---
+
+## E.V.E Algorithms
+
+### [Index compression in a database](https://codereckons.com/tools/z/3v1v6P)
+
+<small>
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<eve::algo::relaxed_range R, typename P, std::integral IdxType, typename Alloc>
+void collect_indexes(R&& r, P p, std::vector<IdxType, Alloc>& res)
+{
+  res.clear();
+  res.resize((r.end() - r.begin()) + eve::expected_cardinal_v<IdxType>);
+
+  IdxType* out = res.data();
+  auto idxes      = eve::views::iota(IdxType{0});
+  auto r_with_idx = eve::views::zip(std::forward<R>(r), idxes);
+
+  auto for_each    = eve::algo::for_each[eve::algo::no_aligning][eve::algo::unroll<1>];
+  for_each( r_with_idx
+          , [&](eve::algo::iterator auto r_idx_it, eve::relative_conditional_expr auto ignore) mutable
+            {
+              auto [elems_it, idxs_it] = r_idx_it;
+              auto elems = eve::load[ignore](elems_it);
+              auto test = p(elems);
+              out  = eve::compress_copy[eve::unsafe][eve::sparse][ignore][eve::ignore_none](idxs_it, test, out);
+            }
+          );
+
+  res.resize(out - res.data());
+  res.shrink_to_fit();
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+</small>
 
 ---
 
 # Conclusion
 
-<center>![](images/reblochon.jpg style="height: 8rem")</center>
-
 ---
 
-## Time to taste!
+## E.V.E in your code ?
 
-### Impact on code - Before
-  * Peak Boost.SIMD was 650K LOC
-  * Average compile-time for unit tests: 10-12s
-  * API was heterogeneous and prone to errors
+### What to expect
+  * ABI/API is in flux but we do tag releases.
+  * Bugs? Maybe, feel free to fill issues.
+  * Want to add some functions? architectures? We're open.
 
-### Impact on code - After
-  * EVE is 54K LOC for equivalent features
-  * Average compile-time for unit tests: 3-4s
-  * API streamlined and simplified
-
-### The Heavy Hitters
-  * **[C++20]** Concepts
-  * **[C++17]** `if constexpr`
-
----
-
-## A Long Journey
-
-### 15 years of Design on moving stages
-  * Hardware and Software were moving targets: 10+ new SIMD IS appeared since
-  * The ever-evolving C++ standard helped leverage ideas we deemed impossible
-  * Encouraged us to play around API design for users and devs
-
-### API is everything
-  * Libraries are more than a collection functions and types
-  * Names have powers, Users have memories
-
-### A Huge Thanks to:
-  * **Jean-Thierry Lapresté**, Mathematician extraordinaire
-  * **Pierre Estérie**, my former PHD student
-  * **Denis Yaroshevskiy**, for being a great contributor ;)
+### Recommended workflow
+  * Focus on the critical components.
+  * Build a standalone component.
+  * Contact us if needed ;)
 
 ---
 
