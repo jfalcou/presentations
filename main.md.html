@@ -264,6 +264,7 @@ auto rx2 = reverse(x);
 ## Implementation of Architecture-Optimized Callables
 
 ### Concepts for SIMD ABI
+
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 template<typename Type, typename Cardinal> consteval auto abi_of()
@@ -323,8 +324,14 @@ template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T
 ## E.V.E Algorithms
 
 ### Objectives
+  * Provides SIMD aware std-like Algorithms
+  * Provide tunable architecture specific options
+  * Interaction with data structure
 
 ### Proposed API
+  * Algorithms
+  * Views
+  * SOA aware containers
 
 ---
 
