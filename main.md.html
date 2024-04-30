@@ -8,433 +8,71 @@
 <meta charset="utf-8" lang="en">
 <!------------------------------------------------------------------------------------------------->
 
-**The Expressive Vector Engine**
+**Outils pour le Parallèlisme**
 <br>
-    SIMD in C++ 20 Goes Brrrr
+    Efficacité et Frugalité.
 <br>
 <small><em><span class="current-date"></span></em></small>
 <br>
 <br>
-Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ
+Joel FALCOU, Sylvain Joube, Jules Pénuchot, Jean-Thierry LAPRESTÉ et plus
 <br>
-<center><small>![](images/lisn.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
-<center>![](images/ccby40.png style="height: 0.7rem")</center>
+<center>![](images/lisn.svg style="height: 3rem")</center>
 <small><small>Powered by Markdeep and Markdeep-Slides</small></small>
 
 ---
 
-# What, Who, Why ?
+## Un point sur la situation
+
+### Le *Hardware*, Ça va
+  * Suprématie de la hiérarchie mémoire.
+  * Parallélisme intra-CPU : SIMD 128,256,512 bits.
+  * Multi-cores et Cluster : une technologie mature.
+  * Les GPUs ont le mérite d'avoir remis le *data-oriented programming* sur le devant de la scène.
+
+### Le *Software*, Bonjour les dégâts
+  * La complexité du *hardware* "*leak*" sur le logiciel.
+  * Personne ne peut être à la fois expert en développement parallèle et en &lt; *insérez de la science ici* &gt;
+  * Une majorité se tourne vers des langages plus simples mais moins performants.
+  * Le code résultant n'utilise qu'une faible partie de la vraie puissance du *hardware* moderne.
 
 ---
 
-## SIMD : The Forgotten Parallel Paradigm
+## De la course au GHz à la course au GW
 
-### Single Instruction Single Data
-  * The usual, run of the mill, ALU.
-  * Maybe more complicated : out-of-order, micro-instructions, etc...
+### L'Energie c'est bien, dans 20-30 ans y en a plus
+  * Réduire la dépendance à des systèmes de calculs sur-dimensionnés.
+  * Démocratiser l'adéquation algorithme/architecture.
+  * Utilisez les évolutions de C++ pour *designer* des bibliothèques efficaces.
 
-<center>![](images/sisd.png)</center>
-
----
-
-## SIMD : The Forgotten Parallel Paradigm
-
-### Single Instruction Single Data
-  * Operations are run on each of the register's lanes.
-  * We expect a speedup from the **width** of the registers.
-
-<center>![](images/simd.png)</center>
+### Travaux de recherche
+  * Concepts et théories de la génération de code par méta-programmation.
+  * **`EVE`** - SIMD pour les masses.
+  * **`QUAFF`** - Déploiement applicatifs sur clusters.
+  * **`KIWAKU`** - Conteneur efficace pour calculs efficaces.
+  * **`SHINRIN`** - Générateur de Langage Orienté Domaine Enfouis.
 
 ---
 
-## SIMD : The Forgotten Parallel Paradigm
+## Du C++ ? Dans cette conjoncture ?
 
-### 1001 Flavors of SIMD
-  * x86
-    * **128 bits**: SSE2, SSE3, SSSE3, SSE4.1, SSE4.2
-    * **256 bits**: AVX, AVX2, XOP
-    * **512 bits**: AVX512 and its myriad of sub-genre
-  * ARM
-    * **128 bits**: NEON, ASIMD
-    * **128, 256, 512** bits: SVE, SVE2
-  * PowerPC
-    * **128 bits**: Altivec on Power7+
-    * **256 bits**: Blue Gene Q QPX
-  * RISC-V, WASM, etc ...
+### [E.V.E](https://github.com/jfalcou/eve)
+  * Wrapper C++ 20 haut niveau pour le SIMD
+  * Support complet pour x86, ARM et PPC
+  * 250+ fonctions vectorisées (math, algorithmes fondamentaux, ...)
+  * Speedup de x8 à x30 sur des applicatifs complexes mono-thread, sans GPUs, à consommation fixe.
+  * Collaboration LSU
 
----
-
-## SIMD : The Forgotten Parallel Paradigm
-
-### Why exploiting this ?
-  * Some application can't use GPGPUS
-  * Already everywhere
-  * Less energy-demanding
-
-### How to exploit this ?
-  * Auto-vectorization
-  * OpenMP pragmas, special compilers (ISPC)
-  * `std::execution::unseq`, [HPX](https://github.com/STEllAR-GROUP/hpx)
-  * Specialized tools: [Halide](https://www.youtube.com/watch?v=1ir_nEfKQ7A), [simdjson](https://github.com/simdjson/simdjson)
-  * Write it by hand
+### [KIWAKU](https://github.com/jfalcou/kiwaku)
+  * Conteneur C++20 haute-performance.
+  * Design par *policy* pour les options de stockages.
+  * Simplification du respect de la hiérarchie mémoire.
+  * Interfaçable avec l’écosystème HPC existant.
+  * Collaboration IJCLab, CERN, Université d’Édimbourg.
 
 ---
 
-## Manual SIMD? In this economy?
-  * It's easy, let's just write SIMD `int32 * int32 + int32`.
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-// SSE2 : Good Luck :)
-
-// SSE4
-__m128i fma(__m128i a, __m128i b, __m128i c)
-{
-  return _mm_mullo_epi32(a, _mm_add_epi32(b,c));
-}
-
-// Altivec
-__vector int fma(__vector int a, __vector int b,  __vector int c)
-{
-  return vec_cts(vec_madd( vec_ctf(a,0), vec_ctf(b,0), vec_ctf(c,0)),0);
-}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## What's E.V.E ?
-
-### Main E.V.E features
-  * C++ 20 wrapper around SIMD intrinsincs
-    * Library of core types
-    * Algorithms
-    * 250+ numerical functions
-  * Supports all x86, ARM, AARCH64 and PPC flavors
-  * Boost license
-  * Team Effort : **Dennis Yaroshevskiy**, **Jean-Thierry Lapresté**, myself.
-
-### Info Dump
-  * Find it on [Github](https://github.com/jfalcou/eve)
-  * Play with it on [Compiler Explorer](https://godbolt.org/z/qzbf4G)
-  * Have look at the [documentation](https://jfalcou.github.io/eve/)
-
----
-
-## E.V.E in a nutshell
-
-### [A Portable `simd_strlen`](https://codereckons.com/tools/z/1YW5rd)
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-std::size_t strlen_example(unsigned char const* s)
-{
-  eve::wide<std::uint8_t> const zeroes{0};
-  eve::aligned_ptr        aligned_s = eve::previous_aligned_address(s);
-  eve::wide<std::uint8_t> cur       = eve::unsafe(eve::load)(aligned_s);
-  auto                    ignore    = eve::ignore_first(s - aligned_s.get());
-  std::optional           match     = eve::first_true[ignore](cur == zeroes);
-
-  while (!match)
-  {
-    aligned_s += eve::wide<std::uint8_t>::size();
-    cur = eve::unsafe(eve::load)(aligned_s);
-    match = eve::first_true(cur == zeroes);
-  }
-
-  return static_cast<std::size_t>(aligned_s.get() + *match - s);
-}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-# E.V.E - A SIMD Wrapper
-
----
-
-## `eve::wide`
-
-### Objectives
-  * Abstract away SIMD register into typed wrappers.
-  * Defined by an **element type** and the numbers of **lanes**.
-  * Statically isolate ABI.
-  * All E.V.E functions `just work`® on them like on scalars.
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-// Lanes adapt to compilation options (portable)
-wide<int>   x{4};                                       // x is [4 4 4 ... 4]
-wide<float> y{[](auto i, auto) { return 1.f/(1+i); }};  // y is [1 0.5 0.333 ...]
-
-// Memory interactions
-double data[] = {12.13,466.55,92.09,73.721,5.8246,194.637};
-wide<double> w{&data[2]};                               // w is [92.09 73.721 ...]
-
-// Specific lanes count (less portable)
-wide<double, fixed<4>> z{1.697,0.25,-3,6.9};
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## E.V.E Functions
-
-### Scope
-  * Basic operations : arithmetic, bitwise, basic math.
-  * A fully vectorized `<cmath>`.
-  * A fully vectorized sets of Special functions, Bessel functions, combinatorial functions.
-  * Polynomial evaluation scheme.
-  * Intra-register reductions.
-  * Swizzling and shuffling.
-
-### Specificities
-  * All E.V.E functions are Callable Objects.
-  * Best implementation is found and generated at compile-time.
-  * Supports for masking.
-  * Supports for user-specified semantic changes.
-
----
-
-## E.V.E Functions
-
-### Masking and Semantic Modifiers
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-wide<int> a,b,c;
-wide<float> x,y;
-
-c = c + 4;                          // c = c+4
-c = add[a<b](c,4);                  // c = c+4 when a<b else c
-c = c * b;                          // c = c*b
-c = mul[ignore_first(2)](c,b);      // c = c*b except for first 2 values
-
-x = exp(y);                         // Regular exp call
-a = add[saturated](b,c);            // Addition with saturation
-x = exp[pedantic](y,z);             // exp with special cases for denormals/infinites
-x = min[numeric](x,y);              // minimum without taking NaNs into account
-x = sqrt[raw](x);                   // sqrt with fast implementation, no error checking
-
-y = sqrt[ignore_first(1)][raw](x);  // combines with masks
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## E.V.E Functions
-
-### Sample Swizzle
-  * **[C++20]** Use a `consteval` mapping of patterns to implementations.
-  * No need to remember which tricks work for which architectures.
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-wide<float, fixed<4>> x;
-
-// Direct index pattern -- not very portable
-auto rx = eve::shuffle(x, pattern<3,2,1,0> );
-
-// Parametric swizzle - use constexpr lambda
-auto rx2 = eve::shuffle(x, as_pattern{ [](auto i, auto c) { return c-i-1; }});
-
-//Using a named swizzle
-auto rx2 = reverse(x);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## Implementation of E.V.E Callables
-
-### The Issues
-  * A typical E.V.E functions may have had 4-8 overloads
-  * Some SIMD instructions + types combo were to be emulated
-  * Some SIMD architecture just didn't support some types
-  * Some functions required very specific optimizations
-
-### Design decision
-  * Detect SIMD architectures and instructions sets via traits
-  * **[C++20]** Use Concepts to overload on SIMD architecture
-  * **[C++17]** Use `if constexpr` to write code based on available SIMD instructions sets
-  * **[C++14/17]** Use enum based categorization to simplify type recognition
-
----
-
-## Implementation of Architecture-Optimized Callables
-
-### Concepts for SIMD ABI
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<typename Type, typename Cardinal> consteval auto abi_of()
-{
-  constexpr auto width  = sizeof(Type) * Cardinal;
-  if constexpr( spy::simd_instruction_set == spy::x86_simd_ )
-  {
-         if constexpr( width <= 16) return x86_128_{};
-    else if constexpr( width == 32) return x86_256_{};
-    else if constexpr( width == 64) return x86_512_{};
-  }
-  else if constexpr( spy::simd_instruction_set == spy::arm_simd_ )
-  {
-         if constexpr( width <= 8 )  return arm_64_{};
-    else if constexpr( width == 16)  return arm_128_{};
-  }
-// ... etc ...
-}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## Implementation of Architecture-Optimized Callables
-
-### `if constexpr` for intrinsics selection
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T,N,ABI> rhs)
-{
-  constexpr auto c = categorize<wide<T,N,ABI>>();
-
-        if constexpr  ( c == category::float64x8  ) return _mm512_add_pd(lhs,rhs);
-  else  if constexpr  ( c == category::float64x4  ) return _mm256_add_pd(lhs,rhs);
-  else  if constexpr  ( c == category::float64x2  ) return _mm_add_pd(lhs,rhs);
-  // etc...
-  else  if constexpr  ( c == category::uint8x16   ) return _mm_add_epi8(lhs,rhs);
-  else  if constexpr  ( current_api >= avx2 )
-  {
-          if constexpr  ( c == category::int64x4  ) return _mm256_add_epi64(lhs,rhs);
-    else  if constexpr  ( c == category::int32x8  ) return _mm256_add_epi32(lhs,rhs);
-    else  if constexpr  ( c == category::int16x16 ) return _mm256_add_epi16(lhs,rhs);
-    // etc...
-    else  if constexpr  ( c == category::int8x32  ) return _mm256_add_epi8(lhs,rhs);
-  }
-}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-# E.V.E - SIMD-enabled Algorithms
-
----
-
-## E.V.E Algorithms
-
-### Objectives
-  * Provides SIMD aware std-like Algorithms
-  * Provide tunable architecture specific options
-  * Interaction with data structure
-
-### Proposed API
-  * Algorithms
-  * Views
-  * SOA aware containers
-
----
-
-## E.V.E Algorithms
-
-### `eve::find_if`
-
-<center>![](images/find_if.png)</center>
-
----
-
-## E.V.E Algorithms
-
-### `eve::remove_if`
-
-<center>![](images/remove_if.png)</center>
-
----
-
-## Interaction with `struct`
-
-### [High-school Physics](https://codereckons.com/tools/z/65r69n)
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-auto update(eve::like<ball> auto const& b, float dt, float g)
-{
-  auto falling = b;
-  auto bounced = b;
-
-  // Update position
-  position(falling) += speed(falling)*dt;
-
-  // Update velocity with gravity
-  speed(falling)    -= g*dt;
-
-  // Compute the bounced ball case
-  speed(bounced)    *= -elasticity(bounced);
-
-  // Select the proper one based on position
-  return eve::if_else( position(falling) <= 1e-4, bounced, falling);
-}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## E.V.E Algorithms
-
-### [Index compression in a database](https://codereckons.com/tools/z/3v1v6P)
-
-<small>
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<eve::algo::relaxed_range R, typename P, std::integral IdxType, typename Alloc>
-void collect_indexes(R&& r, P p, std::vector<IdxType, Alloc>& res)
-{
-  res.clear();
-  res.resize((r.end() - r.begin()) + eve::expected_cardinal_v<IdxType>);
-
-  IdxType* out = res.data();
-  auto idxes      = eve::views::iota(IdxType{0});
-  auto r_with_idx = eve::views::zip(std::forward<R>(r), idxes);
-
-  auto for_each    = eve::algo::for_each[eve::algo::no_aligning][eve::algo::unroll<1>];
-  for_each( r_with_idx
-          , [&](eve::algo::iterator auto r_idx_it, eve::relative_conditional_expr auto ignore) mutable
-            {
-              auto [elems_it, idxs_it] = r_idx_it;
-              auto elems = eve::load[ignore](elems_it);
-              auto test = p(elems);
-              out  = eve::compress_copy[eve::unsafe][eve::sparse][ignore][eve::ignore_none](idxs_it, test, out);
-            }
-          );
-
-  res.resize(out - res.data());
-  res.shrink_to_fit();
-}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-</small>
-
----
-
-# Conclusion
-
----
-
-## E.V.E in your code ?
-
-### What to expect
-  * ABI/API is in flux but we do tag releases.
-  * Bugs? Maybe, feel free to fill issues.
-  * Want to add some functions? architectures? We're open.
-
-### Recommended workflow
-  * Focus on the critical components.
-  * Build a standalone component.
-  * Contact us if needed ;)
-
----
-
-# Thanks for your attention !
+# Merci de votre attention !
 
 <!------------------------------------------------------------------------------------------------->
 <!-- Markdeep slides stuff -->
