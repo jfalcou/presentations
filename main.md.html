@@ -15,7 +15,7 @@
 <small><em><span class="current-date"></span></em></small>
 <br>
 <br>
-Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ
+Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ, ALexis AUNE
 <br>
 <center><small>![](images/lisn.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
 <center>![](images/ccby40.png style="height: 0.7rem")</center>
@@ -33,7 +33,7 @@ Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ
   * The usual, run of the mill, ALU.
   * Maybe more complicated : out-of-order, micro-instructions, etc...
 
-<center>![](images/sisd.png)</center>
+<center>![](images/sisd.png width="700")</center>
 
 ---
 
@@ -43,7 +43,7 @@ Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ
   * Operations are run on each of the register's lanes.
   * We expect a speedup from the **width** of the registers.
 
-<center>![](images/simd.png)</center>
+<center>![](images/simd.png width="700")</center>
 
 ---
 
@@ -111,8 +111,9 @@ __vector int fma(__vector int a, __vector int b,  __vector int c)
     * Algorithms
     * 250+ numerical functions
   * Supports all x86, ARM, AARCH64 and PPC flavors
+  * WIP for : RISC-V, WASM
   * Boost license
-  * Team Effort : **Dennis Yaroshevskiy**, **Jean-Thierry Lapresté**, myself.
+  * Team Effort : **Dennis Yaroshevskiy**, **Jean-Thierry Lapresté**, **Alexis Aune**, myself.
 
 ### Info Dump
   * Find it on [Github](https://github.com/jfalcou/eve)
@@ -339,7 +340,7 @@ template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T
 
 ### `eve::find_if`
 
-<center>![](images/find_if.png)</center>
+<center>![](images/find_if.png width="1000")</center>
 
 ---
 
@@ -347,7 +348,7 @@ template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T
 
 ### `eve::remove_if`
 
-<center>![](images/remove_if.png)</center>
+<center>![](images/remove_if.png width="1000")</center>
 
 ---
 
