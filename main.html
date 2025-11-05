@@ -49,7 +49,7 @@ Joel FALCOU
   * CPUs are very flat flints that do computations when struck by lightning.
   * *Insert joke about Moore's Law having been right for $10^5$ years*.
 
-![Two-sided flint ~500'000 BCE](images/biface.jpg width="60%") ![Silicium-based calculator ~2000 CE](images/cpu.jpg width="70%")
+![Two-sided flint ~500'000 BCE](images/biface.jpg width="60%") ![Flint-based calculator ~2000 CE](images/cpu.jpg width="70%")
 
 ---
 ## Why Making Libraries?
@@ -165,13 +165,13 @@ Joel FALCOU
   * **Use Generative Programming to deliver performance.**
 
 ---
-## First Hurdles
+## Some Hurdles
 
 ### What does "intuitive" mean?
   * Users should see terms and operations they're accustomed to.
   * API should be easy to use as per the domain specifications.
   * Incorrect usage should be reported **early** and **clearly**
-  * **Your best firends are compilitation errors**.
+  * **Your best friends are compilation errors**.
 
 ### What does "extensible" mean?
   * Users should be able to combine pieces of the API and obtain sensible results.
@@ -179,140 +179,478 @@ Joel FALCOU
   * Developers/Contributors should have a clear path to add to the API.
 
 ---
-## First Hurdles
 
-### Sounds like we need some SOLID principles
-  * **Single Responsibility**: *A class should have one and only one job.*
-  * **Open/Close**: *Software entities should be open for extension but closed for modification.*
-  * **Liskov's Substitution Principle**: *Derived types should complement the base object behaviour.*
-  * **Interface Segregation**: *Many specific client interface are better than one general purpose interface.*
-  * **Dependency Inversion**: *Entities must depend on abstractions, not on concretions.*
+## EVE API
+### EVE in a Nutshell
+  * C++ 20 wrapper around SIMD intrinsics
+    * Library of core types
+    * Algorithms
+    * 250+ numerical functions
+  * Supports all x86, ARM, AARCH64 and PPC flavors
+  * WIP for : RISC-V, WASM
+  * Boost license
+  * Team Effort : **Dennis Yaroshevskiy**, **Jean-Thierry Lapresté**, **Alexis Aune**, myself.
 
-### Why SOLID?
-  * More a set of guidelines than a cook book.
-  * Prevent **design error** early on.
-  * Helps compare design choices.
 
-<center>
-**Does those OO rules make sense to design generic libraries?**
-</center>
-
----
-## First Hurdles
-
-### Sounds like we need some SOLID principles
-  * **Single Responsibility**: *A class should have one and only one job.*
-  * **Open/Close**: *Software entities should be open for extension but closed for modification.*
-  * **Liskov's Substitution Principle**: *Derived types should complement the base object behaviour.*
-  * **Interface Segregation**: *Many specific client interface are better than one general purpose interface.*
-  * **Dependency Inversion**: *Entities must depend on abstractions, not on concretions.*
-
-### Why SOLID?
-  * More a set of guidelines than a cook book.
-  * Prevent **design error** early on.
-  * Helps compare design choices.
-
-<center>
-**Maybe ???**
-</center>
+### Info Dump
+  * Find it on [Github](https://github.com/jfalcou/eve)
+  * Play with it on [Compiler Explorer](https://godbolt.org/z/qzbf4G)
+  * Have look at the [documentation](https://jfalcou.github.io/eve/)
 
 ---
 
-## Evidence A - EVE API
+## EVE API
 ### EVE Core Principles
-  * **EVE** relies on few types represneting SIMD registers.
+  * **EVE** relies on few types representing SIMD registers.
   * Majority of operations on those registers are done through **functions**.
-  * Those functiosn shooudl accomodate the design space of existing hardware.
+  * Those functions should accommodate the design space of existing hardware.
 
-```c++
-POUET
-```
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+wide<float> a,b,c,x,y;
+
+c = c + 4;                          // c = c+4
+c = add[a<b](c,4);                  // c = c+4 when a<b else c
+c = mul[ignore_first(2)](c,b);      // c = c*b except for first 2 values
+a = add[saturated](b,c);            // Addition with saturation
+x = exp[pedantic](y,z);             // exp with special cases for denormals/infinites
+x = min[numeric](x,y);              // minimum without taking NaNs into account
+x = sqrt[raw](x);                   // sqrt with fast implementation, no error checking
+
+y = sqrt[ignore_first(1)][raw](x);  // combines with masks
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## EVE API
+### The Issues
+  * A typical E.V.E functions may have had 2-10 overloads.
+  * Some SIMD instructions + types combo need to be emulated.
+  * Some functions required very specific optimizations.
+
+### Design decision
+  * Provide EVE API based on **Callable Objects**.
+  * Use Concepts ensure function calls validity.
+  * Use `if constexpr` to write code based on available SIMD instructions sets.
+  * Use Concepts to overload on SIMD architecture.
+  * Use reusable function object skeletons to encapsulate common behaviors.
+
+---
+## EVE API
+### Functions Design
+  * Building new functions comes with a lot of scaffolding.
+  * A lot of functions share similar behaviors.
+  * Use pre-made callable object types to simplify definitions of functions.
+
+### What did we do?
+  * Took inspiration from Tag Dispatching by implementing functions as objects.
+  * Made an *ad hoc* definition/implementation system.
+  * Make it usable externally.
 
 ---
 
-## Evidence A - EVE API
-### EVE Core Principles
-  * **EVE** relies on few types represneting SIMD registers.
-  * Majority of operations on those registers are done through **functions**.
-  * Those functions should accomodate the design space of existing hardware.
+## Functions as Callable Objects
 
-```c++
-POUET
-```
+### The `eve::abs` function
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename Options>
+struct  abs_t
+      : elementwise_callable<abs_t, Options, saturated_option>
+{
+  template<eve::value T>
+  constexpr T operator()(T v) const { return EVE_DISPATCH_CALL(v); }
+
+  EVE_CALLABLE_OBJECT(abs_t, abs_);
+};
+
+inline constexpr auto abs = functor<abs_t>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Functions as Callable Objects
+
+### The `eve::abs` function
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// An EVE Callable is a template type
+template<typename Options>
+struct  abs_t
+      : elementwise_callable<abs_t, Options, saturated_option>
+{
+  template<eve::value T>
+  constexpr T operator()(T v) const { return EVE_DISPATCH_CALL(v); }
+
+  EVE_CALLABLE_OBJECT(abs_t, abs_);
+};
+
+inline constexpr auto abs = functor<abs_t>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+## Functions as Callable Objects
+
+### The `eve::abs` function
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// An EVE Callable is a template type
+template<typename Options>  //  This contains the semantic options
+struct  abs_t
+      : elementwise_callable<abs_t, Options, saturated_option>
+{
+  template<eve::value T>
+  constexpr T operator()(T v) const { return EVE_DISPATCH_CALL(v); }
+
+  EVE_CALLABLE_OBJECT(abs_t, abs_);
+};
+
+inline constexpr auto abs = functor<abs_t>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+## Functions as Callable Objects
+
+### The `eve::abs` function
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// An EVE Callable is a template type
+template<typename Options>  //  This contains the semantic options
+struct  abs_t
+      : elementwise_callable<abs_t, Options, saturated_option>
+//      ^ This base class provides the common implementation logic
+{
+  template<eve::value T>
+  constexpr T operator()(T v) const { return EVE_DISPATCH_CALL(v); }
+
+  EVE_CALLABLE_OBJECT(abs_t, abs_);
+};
+
+inline constexpr auto abs = functor<abs_t>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+## Functions as Callable Objects
+
+### The `eve::abs` function
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// An EVE Callable is a template type
+template<typename Options>  //  This contains the semantic options
+struct  abs_t
+      : elementwise_callable<abs_t, Options, saturated_option>
+//      ^ This base class provides the common implementation logic
+{
+  // Notice the high level user facing concept
+  template<eve::value T>
+  constexpr T operator()(T v) const { return EVE_DISPATCH_CALL(v); }
+
+  EVE_CALLABLE_OBJECT(abs_t, abs_);
+};
+
+inline constexpr auto abs = functor<abs_t>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+## Functions as Callable Objects
+
+### The `eve::abs` function
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// An EVE Callable is a template type
+template<typename Options>  //  This may contains some semantic options
+struct  abs_t
+      : elementwise_callable<abs_t, Options, saturated_option>
+//      ^ This base class provides the common implementation
+{
+  // Notice the high level user facing concept
+  template<eve::value T>
+    // The implementation is always the same macro call
+  constexpr T operator()(T v) const { return EVE_DISPATCH_CALL(v); }
+
+  EVE_CALLABLE_OBJECT(abs_t, abs_);
+};
+
+inline constexpr auto abs = functor<abs_t>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+## Functions as Callable Objects
+
+### The `eve::abs` function
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// An EVE Callable is a template type
+template<typename Options>  //  This may contains some semantic options
+struct  abs_t
+      : elementwise_callable<abs_t, Options, saturated_option>
+//      ^ This base class provides the common implementation
+{
+  // Notice the high level user facing concept
+  template<eve::value T>
+    // The implementation is always the same macro call
+  constexpr T operator()(T v) const { return EVE_DISPATCH_CALL(v); }
+
+  // This bind the type to the externally overloadable functions
+  EVE_CALLABLE_OBJECT(abs_t, abs_);
+};
+
+inline constexpr auto abs = functor<abs_t>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
-## Evidence A - EVE API
-### EVE Challenges
-  * We must supports large number of implementation's variants.
-  * Functions should discoverable and easily customisable.
-  * We need to report errors with meaningful context.
+## Functions as Callable Objects
 
-```c++
-POUET
-```
+### The `eve::abs` function
 
----
-## Evidence A - EVE API
-### EVE Challenges - Functions dispatching
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// An EVE Callable is a template type
+template<typename Options>  //  This may contains some semantic options
+struct  abs_t
+      : elementwise_callable<abs_t, Options, saturated_option>
+//      ^ This base class provides the common implementation
+{
+  // Notice the high level user facing concept
+  template<eve::value T>
+    // The implementation is always the same macro call
+  constexpr T operator()(T v) const { return EVE_DISPATCH_CALL(v); }
 
----
-## Evidence A - EVE API
-### EVE Challenges - Functions customisation
+  // This bind the type to the external functions to overload
+  EVE_CALLABLE_OBJECT(abs_t, abs_);
+};
 
----
-## Evidence A - EVE API
-### EVE Challenges - Error reporting
-
----
-## What did we learn?
-
----
-## Evidence B - Everything's A Tuple
-### The KUMI Library
+// The type is turned into an EVE callable here
+inline constexpr auto abs = functor<abs_t>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
-## Evidence B - Everything's A Tuple
-### The KUMI Library
+
+## The Callable Skeletons
+### Generic Programming is all about automation
+  * Most EVE functions behave in a similar patterns.
+    * Is there any conversion to do?
+    * Are we operating over or across SIMD lanes?
+  * Can we simplify the implementation for contributors?
+
+### The EVE Callables
+  * Encapsulate various level of recurring code patterns.
+  * Streamline the error-checking process.
+  * Can be extended in an ***Open/Close*** way.
 
 ---
-## Evidence B - Everything's A Tuple
-### The KUMI Library
+
+## The Callable Skeletons
+### `eve::callable`
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<template<typename> class Func, typename OptionsValues, typename... Options>
+struct callable : decorated_with<OptionsValues, Options...>
+{
+  template<callable_options O>
+  EVE_FORCEINLINE constexpr auto operator[](O const& opts) const;
+
+  template<typename... Args>
+  EVE_FORCEINLINE constexpr auto behavior(auto arch, Args&&... args) const
+  {
+    return Func<OptionsValues>::deferred_call(arch, EVE_FWD(args)...);
+  }
+
+  template<typename... Args>
+  EVE_FORCEINLINE constexpr auto retarget(auto arch, Args&&... args) const
+  {
+    return Func<OptionsValues>::deferred_call(arch, this->options(), EVE_FWD(args)...);
+  }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
-## Evidence B - Everything's A Tuple
-### The KUMI Library
 
+## The Callable Skeletons
+### The Secret Macros
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+#define EVE_CALLABLE_OBJECT(TYPE,NAME)                                         \
+template<typename... Args>                                                     \
+static EVE_FORCEINLINE constexpr auto deferred_call(auto arch, Args&&...args)  \
+-> decltype(NAME(eve::detail::adl_helper, arch, EVE_FWD(args)...))             \
+{                                                                              \
+  return NAME(eve::detail::adl_helper, arch, EVE_FWD(args)...);                \
+}                                                                              \
+/**/
+
+// Somewhere else
+namespace eve::detail
+{
+  template<typename T, typename N, callable_options O>
+  wide<T,N> abs_(EVE_REQUIRES(sse2_), O const& o, wide<T,N> const& v) requires x86_abi<abi_t<T, N>>
+  {
+    // Actual X86 SSE2 and above implementations
+  }
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
-## What did we learn?
 
+## Implementation of Architecture-Optimized Callables
+
+### The true power of  `if constexpr`
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename T, typename N, callable_options O>
+wide<T,N> abs_(EVE_REQUIRES(sse2_), O const& opts, wide<T, N> const& v)
+requires x86_abi<abi_t<T, N>>
+{
+  constexpr auto c = categorize<wide<T, N>>();
+
+  if      constexpr( match(c, category::unsigned_)  ) return v;
+  else if constexpr( match(c, category::float_)     ) return bit_andnot(v, mzero(as(v)));
+  else if constexpr( c == category::int64x8         ) return _mm512_abs_epi64(v);
+  else if constexpr( match(c, category::size64_)    ) return map(eve::abs, v);
+  else if constexpr( c == category::int32x16        ) return _mm512_abs_epi32(v);
+  // ... etc
+
+  else if constexpr( c == category::int8x16 )
+  {
+    if constexpr( current_api >= ssse3 ) return _mm_abs_epi8(v); else return _mm_min_epu8(v, -v);
+  }
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
-# Going off Road
+
+## EVE API
+### Reporting Usage Errors
+  * Concept placement is key.
+    * [**Check for concepts at the highest API point possible**](https://godbolt.org/z/vTfoxaYbv).
+    * If your error is coming from **inside your library**, you failed.
+  * Preventing cascading errors.
+    * `auto` return type can be a false friend.
+    * The [**`ignore` trick**](https://github.com/jfalcou/eve/blob/main/include/eve/traits/overload/impl/strict_elementwise.hpp).
+
+### Reporting Logic Errors
+  * `static_assert` has to be used [**strategically**](https://godbolt.org/z/dKjcoxoz6).
+  * It breaks SFINAE-friendliness but clearly indicates something's deeply wrong.
+
+---
+## What Did We Learn?
+### Concepts or Not ?
+  * Use Concepts to dispatch over **type's capabilities**.
+  * Use `if constexpr` to select implementation details.
+  * **Filter out bad calls as high in the call tree as possible**.
+
+### Errors Reporting
+  * Concepts failures report API misuses.
+  * **Static Asserts report logical issues**.
+  * Try to be as SFINAE-friendly as possible so other components can inquires about functions' availability.
+
+---
+# Going Off-Road
 
 <center>![](images/painting.jpg width="30%")</center>
 
 ---
 
-## Evidence C - KIWAKU Design
+## nD Array Design Space
+### A small sampling
+  * Owning or non-owning array ?
+  * Are my dimensions runtime or compile-time? or both?
+  * Storage order : C, FORTRAN, arbitrary, ...?
+  * Indexes start at 0? 1? -3? any user value?
+  * Memory allocation : Allocator-based? Which allocator model? Stack or Heap?
+
+### One implementation to rule them all ?
+  * Monolithic implementation leads to unmaintainable code.
+  * Arbitrary restrictions on API is not a solution.
+  * Can we get creative here and get some results?
+
+---
+## KIWAKU
 ### KIWAKU in a nutshell
 
----
-
-## Evidence C - KIWAKU Design
-### KIWAKU in a nutshell
 
 ---
 
-## Evidence C - KIWAKU Design
+## KIWAKU
+
+### `kwk::view`
+  * Never owns any memory
+  * Wraps existing memory in a nD-array like interface.
+  * Is designed to be as small as possible in 'resting position'
+
+### `kwk::table`
+  * Owns memory allocated via an allocator or on the stack.
+  * Wraps said memory in a nD-array like interface.
+  * Is designed to be as small as possible in 'resting position'.
+
+### Two sides of the same coin
+  * A `kwk::table` is a `kwk::view` over the memory it owns.
+  * Efficient `kwk::view` leads to efficient `kwk::table`.
+
+---
+
+## KIWAKU
 ### Constructing KIWAKU containers
+  * Use user-defined deduction guides as pseudo-function
+
+<iframe width="1400px" height="500px" src="https://godbolt.org/e?readOnly=true&hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:18,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:1,endLineNumber:11,positionColumn:1,positionLineNumber:11,selectionStartColumn:1,selectionStartLineNumber:9,startColumn:1,startLineNumber:9),source:'%23include+%3Ckwk/kwk.hpp%3E%0A%23include+%3Cvector%3E%0A%23include+%3Ciostream%3E%0A%0Aint+main()%0A%7B%0A++using+namespace+kwk%3B%0A%0A++std::vector%3Cdouble%3E+data(18)%3B%0A%0A++auto+vd+%3D+view%7B+source+%3D+data+%0A++++++++++++++++,+of_size(2,3,3)%0A++++++++++++++++,+label+%3D+%22raw_data%22%0A++++++++++++++++%7D%3B%0A++%0A++for(std::size_t+i2+%3D+0%3B+i2+%3C+dim%3C2%3E(vd)%3B%2B%2Bi2)%0A++++for(std::size_t+i1+%3D+0%3B+i1+%3C+dim%3C1%3E(vd)%3B%2B%2Bi1)%0A++++++for(std::size_t+i0+%3D+0%3B+i0+%3C+dim%3C0%3E(vd)%3B%2B%2Bi0)++%0A++++++++vd(i0,i1,i2)+%3D+(i0%2B1)+%2B+10*(i1%2B1)+%2B+100*(i2%2B1)%3B%0A%0A++std::cout+%3C%3C+vd+%3C%3C+%22%5Cn%22%3B+%0A++std::cout+%3C%3C+data.front()+%3C%3C+%22+-%3E+%22+%3C%3C+data.back()+%3C%3C+%22%5Cn%22%3B%0A%7D'),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0')),k:50,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((g:!((h:compiler,i:(compiler:g151,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'0',intel:'0',libraryCode:'0',trim:'1',verboseDemangling:'0'),flagsViewOpen:'1',fontScale:18,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!((name:kiwaku,ver:trunk),(name:kumi,ver:trunk),(name:raberu,ver:trunk)),options:'-O3+-DNDEBUG+-std%3Dc%2B%2B20',overrides:!(),selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:1),l:'5',n:'0',o:'+x86-64+gcc+15.1+(Editor+%231)',t:'0')),k:50,l:'4',m:34.24947145877378,n:'0',o:'',s:0,t:'0'),(g:!((h:output,i:(compilerName:'x86-64+gcc+15.1',editorid:1,fontScale:18,fontUsePx:'0',j:1,wrap:'0'),l:'5',n:'0',o:'Output+of+x86-64+gcc+15.1+(Compiler+%231)',t:'0')),header:(),l:'4',m:65.75052854122622,n:'0',o:'',s:0,t:'0')),k:50,l:'3',n:'0',o:'',t:'0')),l:'2',n:'0',o:'',t:'0')),version:4"></iframe>
 
 ---
 
-## Evidence C - KIWAKU Design
-### Constructing KIWAKU containers
+## KIWAKU
+### Algorithms
+  * Extends classical standard algorithms to nD.
+  * We don't need `zip`.
 
+<iframe width="1400px" height="450px" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:18,fontUsePx:'0',j:1,lang:c%2B%2B,selection:(endColumn:2,endLineNumber:25,positionColumn:2,positionLineNumber:25,selectionStartColumn:2,selectionStartLineNumber:25,startColumn:2,startLineNumber:25),source:'%23include+%3Ckwk/kwk.hpp%3E%0A%23include+%3Ciostream%3E%0A%0Ausing+namespace+kwk%3B%0A%0Avoid+f(kwk::concepts::container%3Ckwk::_3D%3E+auto%26+c)%0A%7B%0A++kwk::generate(%5B%26%5D(auto+i0,+auto+i1,+auto+i2)+%0A++++++++++++++++%7B+%0A++++++++++++++++++return+i0+*+100+%2B+i1+*+10+%2B+i2%3B+%0A++++++++++++++++%7D%0A++++++++++++++++,+c%0A++++++++++++++++)%3B%0A%7D%0A%0Aint+main()%0A%7B%0A++auto++d+%3D+table%7B+of_size(2,3,3)%0A+++++++++++++++++,+type%3Cfloat%3E%7B%7D%0A+++++++++++++++++,+label+%3D+%22raw_data%22%0A+++++++++++++++++%7D%3B%0A++%0A++f(d)%3B%0A++std::cout+%3C%3C+d+%3C%3C+%22%5Cn%22%3B%0A%7D'),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0')),k:50,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((g:!((h:compiler,i:(compiler:g151,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'0',intel:'0',libraryCode:'0',trim:'1',verboseDemangling:'0'),flagsViewOpen:'1',fontScale:18,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!((name:kiwaku,ver:trunk),(name:kumi,ver:trunk),(name:raberu,ver:trunk)),options:'-O3+-DNDEBUG+-std%3Dc%2B%2B20',overrides:!(),selection:(endColumn:1,endLineNumber:1,positionColumn:1,positionLineNumber:1,selectionStartColumn:1,selectionStartLineNumber:1,startColumn:1,startLineNumber:1),source:1),l:'5',n:'0',o:'+x86-64+gcc+15.1+(Editor+%231)',t:'0')),k:50,l:'4',m:34.24947145877378,n:'0',o:'',s:0,t:'0'),(g:!((h:output,i:(compilerName:'x86-64+gcc+15.1',editorid:1,fontScale:18,fontUsePx:'0',j:1,wrap:'0'),l:'5',n:'0',o:'Output+of+x86-64+gcc+15.1+(Compiler+%231)',t:'0')),header:(),l:'4',m:65.75052854122622,n:'0',o:'',s:0,t:'0')),k:50,l:'3',n:'0',o:'',t:'0')),l:'2',n:'0',o:'',t:'0')),version:4"></iframe>
+
+---
+
+## KIWAKU
+### Algorithms
+  * Extends classical standard algorithms to nD.
+  * Improve upon the standard execution policy idea.
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ c++ linenumbers
+kwk::sycl::gpu.with( [&](auto& in, auto& out_in)
+{
+  // Data "in" is sent to the GPU memory once
+  auto pos = kwk::find_if( [](auto item) { return std::abs(item) > 10; }, in);
+
+  // "in" still is in GPU memory
+  kwk::transform( out_in, [pos](auto a) { return a + pos; }, in);
+
+  // "out_in" sill in GPU memory
+  result = kwk::reduce( [](auto e1, auto e2) { return e1 * e2 ; }, out_in);
+}
+, kwk::sycl::in{table1}, kwk::sycl::inout{view1}
+);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 # Parting Words
@@ -321,35 +659,45 @@ POUET
 
 ---
 
-## From Object to Generative Programming
+## Building on SOLID Foundations
 
-### What did we learn?
-  * The most general SOLID rules are directly usable.
+### What Did We Learn?
   * Incorporate non-member functions into types's interfaces.
   * Shift focus from Interface/Class/Object to Concept/Type/Value.
   * Emphasis entities collaboration across libraries.
+  * Simple components are key to efficient design.
 
-### Our SOLID Library Principles
+---
+
+## Building on SOLID Foundations
+
+### What Did We Learn?
+  * Incorporate non-member functions into types's interfaces.
+  * Shift focus from Interface/Class/Object to Concept/Type/Value.
+  * Emphasis entities collaboration across libraries.
+  * Simple components are key to efficient design.
+
+### The SOLID Principles for OOP
   * **Single Responsibility**: *A class should have one and only one job.*
   * **Open/Close**: *Software entities should be open for extension but closed for modification.*
   * **Substitution Principle**: *Derived types should complement the base object behaviour.*
   * **Interface Segregation**: *Many specific client interface are better than one general purpose interface.*
   * **Dependency Inversion**: *Entities must depend on abstractions, not on concretions.*
 
-  ---
+---
 
-## From Object to Generative Programming
+## Building on SOLID Foundations
 
-### What did we learn?
-  * The most general SOLID rules are directly usable.
+### What Did We learn?
   * Incorporate non-member functions into types's interfaces.
   * Shift focus from Interface/Class/Object to Concept/Type/Value.
   * Emphasis entities collaboration across libraries.
+  * Simple components are key to efficient design.
 
-### Our SOLID Library Principles
+### The SOLID Principles for Generic Programming
   * **Single Responsibility**: *A **type** or **function** should have one and only one job.*
   * **Open/Close**: *Software entities extension is a **core design choice**.*
-  * **Substitution Principle**: *API extensions should complement the base object behaviour.*
+  * **Substitution Principle**: ***Refined interface** should complement the **base concept behaviour**.*
   * **Interface Segregation**: *Many specific purpose **libraries** are better than a general purpose **library**.*
   * **Dependency Inversion**: *Entities must depend on **concepts**, not on **types**.*
 
@@ -359,17 +707,16 @@ POUET
 
 ### Maximize Interoperability!
   * Languages evolved to support more generic composition mechanisms.
-  * Don't minimize QoL libraries.
+  * Don't make QoL libraries go dark.
   * **C++: We need a standard package manager!**
 
 ### Make It Known!
   * The community needs more venue to **publish** and **promote** tools.
-  * Motivate your students/collaborators to communicate about their libraries.
-  * **Github** and **JOSS** changed the landscape, we need to push through.
+  * Motivate your students and collaborators to communicate about their libraries.
 
 ### Shoot Out
   * Denis Yaroshesky, Jean Thierry Lapresté, Alexis Aune
-  * Sylvain Joube, Adrien Henrot, David Chamont, Hadrien XXX
+  * Sylvain Joube, Adrien Henrot, David Chamont, Hadrien Grasland
 
 ---
 
@@ -407,78 +754,3 @@ POUET
 <style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
 <script src="markdeep-slides/lib/markdeep/1.09/markdeep.min.js" charset="utf-8"></script>
 <script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
-
-<!---
-
----
-## Building Solid Foundations
-
-### The SOLID Principles
-  * **Single Responsibility**: *A class should have one and only one job.*
-  * **Open/Close**: *Software entities should be open for extension but closed for modification.*
-  * **Liskov's Substitution Principle**: *Derived types should complement the base object behaviour.*
-  * **Interface Segregation**: *Many specific client interface are better than one general purpose interface.*
-  * **Dependency Inversion**: *Entities must depend on abstractions, not on concretions.*
-
-### Why SOLID?
-  * More a set of guidelines than a cook book.
-  * Prevent **design error** early on.
-  * Helps compare design choices.
-
-<center>
-**Does those OO rules make sense to design generic libraries?**
-</center>
-
----
-## `Mouth.receive(Foot3)`
-
-### Our Approach
-  * Increased interoperability via **concepts sharing**.
-  * Document extension points as clearly as possible.
-  * Let users assemble libraries into larger abstractions.
-
-| NuCog  (WIP)                                  | Compile-time formula generator              |
-
----
-## `Mouth.receive(Foot3)`
-
-### E.V.E/Kumi Interoperability
-
-```c++
-// eve::struct_supports register a struct as a product type
-struct complex : eve::struct_supports<complex,double, double>
-{
-  complex(double r = 0., double i = 0.)
-  {
-    real(*this) = r;
-    imag(*this) = i;
-  }
-
-  friend decltype(auto) real(complex&& z) { return kumi::get<0>(z); }
-  friend decltype(auto) imag(complex&& z) { return kumi::get<1>(z); }
-};
-
-// EVE SIMD algorithms can consume product types stored via eve::soa_vector
-eve::wide<complex>        vz = [](auto i, auto) { return complex{i+1,1./(i+1)}; }
-eve::soa_vector<complex>  zs = /* ... */;
-eve::vector<double>       r(zs.size());
-eve::transform([&](auto z) { auto[r,i] = z*vz; return r*r+i*i;}, zs, r);
-```
-
----
-## `Mouth.receive(Foot3)`
-
-### Kiwaku/E.V.E/Raberu Interoperability
-
-```c++
-std::vector<float> d(100);
-
-// Raberu named parameters used by KWK constructors
-// KWK statically exploit raberu parameters to pick the best type to use
-auto v = kwk::view{ kwk::of_size(width = 10, height = 10), source = d};
-
-// KWK algorithms uses context as architecture-specific optimization driver
-// kwk::context::simd triggers uses of EVE vectorisation process
-kwk::transform( kwk::context::simd, [](auto e) { return 1.f/e*e;}, v, v);
-```
--->
