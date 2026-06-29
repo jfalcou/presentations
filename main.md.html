@@ -15,7 +15,7 @@
 <small><em><span class="current-date"></span></em></small>
 <br>
 <br>
-Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ, ALexis AUNE
+Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ, Alexis AUNE, Adrien HENROT
 <br>
 <center><small>![](images/lisn.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
 <center>![](images/ccby40.png style="height: 0.7rem")</center>
@@ -27,44 +27,125 @@ Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ, ALexis AUNE
 
 ---
 
-## SIMD : The Forgotten Parallel Paradigm
+## SIMD in a nutshell
 
 ### Single Instruction Single Data
   * The usual, run of the mill, ALU.
   * Maybe more complicated : out-of-order, micro-instructions, etc...
 
-<center>![](images/sisd.png width="700")</center>
+*****************************************************************************
+*                     🟨                    🟦
+*                     🟨                    🟦
+*                     🟨                    🟦
+*                +----------+        +----------+
+*                |          +--------+          |
+*                |                              |        🟨 Instruction
+*                |             SISD             |        🟦 Data
+*                |             ALUs             |        🟥 Result
+*                +------------------------------+
+*                                🟥
+*                                🟥
+*                                🟥
+*****************************************************************************
 
 ---
 
-## SIMD : The Forgotten Parallel Paradigm
+## SIMD in a nutshell
 
 ### Single Instruction Single Data
   * Operations are run on each of the register's lanes.
   * We expect a speedup from the **width** of the registers.
 
-<center>![](images/simd.png width="700")</center>
+
+*****************************************************************************
+*                     🟨                 🟦 🟦 🟦 🟦
+*                     🟨                 🟦 🟦 🟦 🟦
+*                     🟨                 🟦 🟦 🟦 🟦
+*                +----------+        +----------+
+*                |          +--------+          |
+*                |                              |        🟨 Instruction
+*                |             SISD             |        🟦 Data
+*                |             ALUs             |        🟥 Result
+*                +------------------------------+
+*                             🟥 🟥 🟥 🟥
+*                             🟥 🟥 🟥 🟥
+*                             🟥 🟥 🟥 🟥
+*****************************************************************************
 
 ---
 
-## SIMD : The Forgotten Parallel Paradigm
+## SIMD in a nutshell
 
-### 1001 Flavors of SIMD
-  * x86
-    * **128 bits**: SSE2, SSE3, SSSE3, SSE4.1, SSE4.2
-    * **256 bits**: AVX, AVX2, XOP
-    * **512 bits**: AVX512 and its myriad of sub-genre
-  * ARM
-    * **128 bits**: NEON, ASIMD
-    * **128, 256, 512** bits: SVE, SVE2
-  * PowerPC
-    * **128 bits**: Altivec on Power7+
-    * **256 bits**: Blue Gene Q QPX
-  * RISC-V, WASM, etc ...
+### SIMD registers
+  * SIMD registers are organized into **lanes**.
+  * SIMD operations are applied to each lane in parallel.
+  * Each architecture provides specific data types for SIMD registers.
+  * **Not all types are supported by all architectures!**
+
+*********************************************************************************************************************
+*                 127                                                             0
+*                 +---------------------------------------------------------------+
+*                 |                         XMM (128 bits)                        |
+*                 +-------------------------------+-------------------------------+
+*                 |              # 1              |              # 0              | <-- double, long (64 bits)
+*                 +---------------+---------------+---------------+---------------+
+*                 |      # 3      |      # 2      |      # 1      |      # 0      | <-- float, int (32 bits)
+*                 +-------+-------+-------+-------+-------+-------+-------+-------+
+*                 |  # 7  |  # 6  |  # 5  |  # 4  |  # 3  |  # 2  |  # 1  |  # 0  | <-- short (16 bits)
+*                 +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+*                 |#15|#14|#13|#12|#11|#10|# 9|# 8|# 7|# 6|# 5|# 4|# 3|# 2|# 1|# 0| <-- char (8 bits)
+*                 +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+*********************************************************************************************************************
 
 ---
 
-## SIMD : The Forgotten Parallel Paradigm
+## SIMD in a nutshell
+
+### SIMD register operations
+
+*********************************************************************************************************************
+*        +-------+-------+-------+-------+-------+-------+-------+-------+
+*        |  A7   |  A6   |  A5   |  A4   |  A3   |  A2   |  A1   |  A0   |
+*        +-------+-------+-------+-------+-------+-------+-------+-------+
+*
+*                                        +
+*
+*        +-------+-------+-------+-------+-------+-------+-------+-------+
+*        |  B7   |  B6   |  B5   |  B4   |  B3   |  B2   |  B1   |  B0   |
+*        +-------+-------+-------+-------+-------+-------+-------+-------+
+*
+*                                        =
+*
+*        +-------+-------+-------+-------+-------+-------+-------+-------+
+*        | A7+B7 | A6+B6 | A5+B5 | A4+B4 | A3+B3 | A2+B2 | A1+B1 | A0+B0 |
+*        +-------+-------+-------+-------+-------+-------+-------+-------+
+*********************************************************************************************************************
+
+---
+
+## SIMD in a nutshell
+
+*********************************************************************************************************************
+*                                                                   AVX512F
+*                                         QPX      XOP                 ^                  SVE2
+* VMX     SSE2        SSE3    SSSE3  SSE4.2^       AVX    AVX2         |  AVX512BW    SVE  ^
+*  ^       ^           ^       ^       ^   |       ^       ^           |   ^           ^   |
+*  |       |           |       |       |   |       |       |           |   |           |   |
+*  *---o---*---*---*---*---o---*---*---*---*---o---*---*---*---*---o---*---*---*---*---o---*---*---*---*---o---
+*     2000                2005     |   |   |  2010 |              2015                2020 |              2025
+*                                  v   |   v       v                                       v
+*                               SSE4.1 v  VMX    ASIMD                                   WASM SIMD
+*                                     NEON                                                RISC-V
+*********************************************************************************************************************
+
+### What about MY machine?
+  * **Linux** : `lscpu` or `cat /proc/cpuinfo`.
+  * **macOS** : `sysctl`.
+  * **Windows** : `coreinfo` from `Sysinternals`.
+
+---
+
+## SIMD in a nutshell
 
 ### Why exploiting this ?
   * Some application can't use GPGPUS
@@ -81,7 +162,24 @@ Joel FALCOU, Dennis YAROSHEVSKIY, Jean-Thierry LAPRESTÉ, ALexis AUNE
 ---
 
 ## Manual SIMD? In this economy?
-  * It's easy, let's just write SIMD `int32 * int32 + int32`.
+
+### SIMD *intrinsics*
+  * An ***intrinsic*** is a function that maps directly to one or more specific machine instructions.
+  * **SIMD data types:** Intrinsics use specific data types to represent SIMD registers.
+  * **SIMD operations:** Intrinsics provide functions to perform SIMD operations.
+  * **Memory management:** Intrinsics include functions for loading and storing data in SIMD registers.
+
+### *Intrinsics* in practice
+  * **Maximum performance:** Allows the architecture’s SIMD capabilities to be fully utilized.
+  * **Precise control:** Allows the details of the implementation to be managed.
+  * **Limited portability:** Intrinsics are architecture-specific, which makes the code less portable.
+  * **Increased complexity:** Requires an in-depth understanding of the architecture.
+
+---
+
+## Mum, I want some SIMD! But we have SIMD at home!
+
+### The SIMD at Home:
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
@@ -103,6 +201,22 @@ __vector int fma(__vector int a, __vector int b,  __vector int c)
 
 ---
 
+## Manual SIMD? In this economy?
+
+### An overview of SIMD via intrinsics
+  * Intrinsics offer precise control but are very verbose, difficult to maintain and non-portable.
+  * This is why it is often preferable to use *wrapping* libraries, which are more user-friendly.
+  * Enjoy the benefits of SIMD without the drawbacks of programming using intrinsics.
+
+### SIMD *wrapping* libraries
+  * **Highway**: A *wrapping* library for SIMD intrinsics developed by Google.
+  * **SIMDe**: A compatibility library that emulates SIMD intrinsics on architectures that do not natively support them.
+  * **XSIMD**: A *wrapping* library for SIMD intrinsics with a focus on portability.
+  * **std::simd**: C++26 standard SIMD wrapping.
+  * ***EVE*: A modern C++20 and onward library for SIMD.**
+
+---
+
 ## What's E.V.E ?
 
 ### Main E.V.E features
@@ -113,40 +227,12 @@ __vector int fma(__vector int a, __vector int b,  __vector int c)
   * Supports all x86, ARM, AARCH64 and PPC flavors
   * WIP for : RISC-V, WASM
   * Boost license
-  * Team Effort : **Dennis Yaroshevskiy**, **Jean-Thierry Lapresté**, **Alexis Aune**, myself.
+  * **Dennis Yaroshevskiy**, **Jean-Thierry Lapresté**, **Alexis Aune**, **Adrien Henrot**, myself.
 
 ### Info Dump
   * Find it on [Github](https://github.com/jfalcou/eve)
   * Play with it on [Compiler Explorer](https://godbolt.org/z/qzbf4G)
   * Have look at the [documentation](https://jfalcou.github.io/eve/)
-
----
-
-## E.V.E in a nutshell
-
-### [A Portable `simd_strlen`](https://codereckons.com/tools/z/1YW5rd)
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-std::size_t strlen_example(unsigned char const* s)
-{
-  eve::wide<std::uint8_t> const zeroes{0};
-  eve::aligned_ptr        aligned_s = eve::previous_aligned_address(s);
-  eve::wide<std::uint8_t> cur       = eve::unsafe(eve::load)(aligned_s);
-  auto                    ignore    = eve::ignore_first(s - aligned_s.get());
-  std::optional           match     = eve::first_true[ignore](cur == zeroes);
-
-  while (!match)
-  {
-    aligned_s += eve::wide<std::uint8_t>::size();
-    cur = eve::unsafe(eve::load)(aligned_s);
-    match = eve::first_true(cur == zeroes);
-  }
-
-  return static_cast<std::size_t>(aligned_s.get() + *match - s);
-}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
 
 ---
 
@@ -160,28 +246,8 @@ std::size_t strlen_example(unsigned char const* s)
   * Abstract away SIMD register into typed wrappers.
   * Defined by an **element type** and the numbers of **lanes**.
   * Statically isolate ABI.
-  * All E.V.E functions `just work`® on them like on scalars.
 
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-// Lanes adapt to compilation options (portable)
-wide<int>   x{4};                                       // x is [4 4 4 ... 4]
-wide<float> y{[](auto i, auto) { return 1.f/(1+i); }};  // y is [1 0.5 0.333 ...]
-
-// Memory interactions
-double data[] = {12.13,466.55,92.09,73.721,5.8246,194.637};
-wide<double> w{&data[2]};                               // w is [92.09 73.721 ...]
-
-// Specific lanes count (less portable)
-wide<double, fixed<4>> z{1.697,0.25,-3,6.9};
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## E.V.E Functions
-
-### Scope
+### API
   * Basic operations : arithmetic, bitwise, basic math.
   * A fully vectorized `<cmath>`.
   * A fully vectorized sets of Special functions, Bessel functions, combinatorial functions.
@@ -189,11 +255,57 @@ wide<double, fixed<4>> z{1.697,0.25,-3,6.9};
   * Intra-register reductions.
   * Swizzling and shuffling.
 
-### Specificities
-  * All E.V.E functions are Callable Objects.
-  * Best implementation is found and generated at compile-time.
-  * Supports for masking.
-  * Supports for user-specified semantic changes.
+---
+
+## `eve::wide`
+
+### Initialisations
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+#include <eve/eve.hpp>
+#include <iostream>
+
+int main()
+{
+  float data[] = {1,2,3,4,10,20,30,40,50};
+
+  eve::wide<float> registre = eve::load(&data[0]);
+  eve::wide<float> zeros{0.f};
+  eve::wide<float> broadcast{4.5f};
+
+  std::cout << "registre  : " << registre   << "\n";
+  std::cout << "zeros     : " << zeros      << "\n";
+  std::cout << "broadcast : " << broadcast  << "\n";
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## `eve::wide`
+
+### Initialisations
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+#include <eve/eve.hpp>
+#include <iostream>
+
+int main()
+{
+  eve::wide<float, eve::fixed<4>> direct = {1.f,2.f,3.f,4.f}; // Natural order, regardless of arch.
+
+  // Autofill based on a formula, regardless of the nb of lanes
+  eve::wide<float> idx                  = [](auto i) { return 2.3f *(i + 1.0f); };
+  eve::wide<float, eve::fixed<4>> idx2  = [](auto i, auto c) { return i/static_cast<float>(c); };
+
+  std::cout << "direct    : " << direct     << "\n";
+  std::cout << "idx       : " << idx        << "\n";
+  std::cout << "idx2      : " << idx2       << "\n";
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
 
 ---
 
@@ -226,7 +338,7 @@ y = sqrt[ignore_first(1)][raw](x);  // combines with masks
 ## E.V.E Functions
 
 ### Sample Swizzle
-  * **[C++20]** Use a `consteval` mapping of patterns to implementations.
+  * Use a constant mapping of patterns to implementations.
   * No need to remember which tricks work for which architectures.
 
 <script type="preformatted">
@@ -241,78 +353,6 @@ auto rx2 = eve::shuffle(x, as_pattern{ [](auto i, auto c) { return c-i-1; }});
 
 //Using a named swizzle
 auto rx2 = reverse(x);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## Implementation of E.V.E Callables
-
-### The Issues
-  * A typical E.V.E functions may have had 4-8 overloads
-  * Some SIMD instructions + types combo were to be emulated
-  * Some SIMD architecture just didn't support some types
-  * Some functions required very specific optimizations
-
-### Design decision
-  * Detect SIMD architectures and instructions sets via traits
-  * **[C++20]** Use Concepts to overload on SIMD architecture
-  * **[C++17]** Use `if constexpr` to write code based on available SIMD instructions sets
-  * **[C++14/17]** Use enum based categorization to simplify type recognition
-
----
-
-## Implementation of Architecture-Optimized Callables
-
-### Concepts for SIMD ABI
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<typename Type, typename Cardinal> consteval auto abi_of()
-{
-  constexpr auto width  = sizeof(Type) * Cardinal;
-  if constexpr( spy::simd_instruction_set == spy::x86_simd_ )
-  {
-         if constexpr( width <= 16) return x86_128_{};
-    else if constexpr( width == 32) return x86_256_{};
-    else if constexpr( width == 64) return x86_512_{};
-  }
-  else if constexpr( spy::simd_instruction_set == spy::arm_simd_ )
-  {
-         if constexpr( width <= 8 )  return arm_64_{};
-    else if constexpr( width == 16)  return arm_128_{};
-  }
-// ... etc ...
-}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-</script>
-
----
-
-## Implementation of Architecture-Optimized Callables
-
-### `if constexpr` for intrinsics selection
-
-<script type="preformatted">
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T,N,ABI> rhs)
-{
-  constexpr auto c = categorize<wide<T,N,ABI>>();
-
-        if constexpr  ( c == category::float64x8  ) return _mm512_add_pd(lhs,rhs);
-  else  if constexpr  ( c == category::float64x4  ) return _mm256_add_pd(lhs,rhs);
-  else  if constexpr  ( c == category::float64x2  ) return _mm_add_pd(lhs,rhs);
-  // etc...
-  else  if constexpr  ( c == category::uint8x16   ) return _mm_add_epi8(lhs,rhs);
-  else  if constexpr  ( current_api >= avx2 )
-  {
-          if constexpr  ( c == category::int64x4  ) return _mm256_add_epi64(lhs,rhs);
-    else  if constexpr  ( c == category::int32x8  ) return _mm256_add_epi32(lhs,rhs);
-    else  if constexpr  ( c == category::int16x16 ) return _mm256_add_epi16(lhs,rhs);
-    // etc...
-    else  if constexpr  ( c == category::int8x32  ) return _mm256_add_epi8(lhs,rhs);
-  }
-}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -340,7 +380,7 @@ template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T
 
 ### `eve::find_if`
 
-<center>![](images/find_if.png width="1000")</center>
+<center>![](images/find_if.png style="width: 30rem")</center>
 
 ---
 
@@ -348,7 +388,58 @@ template<typename T, typename N, x86_abi ABI> auto add(wide<T,N,ABI> lhs, wide<T
 
 ### `eve::remove_if`
 
-<center>![](images/remove_if.png width="1000")</center>
+<center>![](images/remove_if.png style="width: 30rem")</center>
+
+---
+
+## Interaction with `struct`
+
+### [Complex number](https://codereckons.com/tools/z/ffP4rx)
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+void process_scalar(std::vector<std::complex<float>> const& x, std::vector<float>& n)
+{
+  std::ranges::transform(x, n.begin(), [](auto e) { return std::hypot(e.real(), e.imag()); });
+}
+
+void process_simd_zip ( std::vector<float> const& real, std::vector<float> const& imag
+                      , std::vector<float>& out
+                      )
+{
+  eve::algo::transform_to(eve::views::zip(real, imag), out, [](auto e)
+  {
+    auto[r, i] = e;
+    return eve::hypot(r,i);
+  });
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Interaction with `struct`
+
+### [Complex number](https://codereckons.com/tools/z/ffP4rx)
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+using complex_t = kumi::tuple<float, float>;
+
+void process_simd_soa(eve::algo::soa_vector<complex_t> const& cmplx, std::vector<float>& out)
+{
+  eve::algo::transform_to(cmplx, out, [](auto z) { return eve::hypot(z); });
+}
+
+void process_simd_raw_hypot(eve::algo::soa_vector<complex_t> const& cmplx, std::vector<float>& out)
+{
+  eve::algo::transform_to(cmplx, out, [](auto z) { return eve::hypot[eve::raw](z); });
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+### Spoiler : the [KYOSU library](https://github.com/jfalcou/kyosu)
+  * EVE enabled Caley-Dickson computation library
+  * Supports complex, quaternion, octonion and other eldritch horrors.
 
 ---
 
@@ -380,36 +471,77 @@ auto update(eve::like<ball> auto const& b, float dt, float g)
 
 ---
 
-## E.V.E Algorithms
+## Stencils
 
-### [Index compression in a database](https://codereckons.com/tools/z/3v1v6P)
+### [Bilateral Filter](https://codereckons.com/tools/z/jPcj4j)
 
 <small>
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<eve::algo::relaxed_range R, typename P, std::integral IdxType, typename Alloc>
-void collect_indexes(R&& r, P p, std::vector<IdxType, Alloc>& res)
+void bilateral_scalar(std::span<const float> in, std::span<float> out)
 {
-  res.clear();
-  res.resize((r.end() - r.begin()) + eve::expected_cardinal_v<IdxType>);
+  int n = in.size();
+  float var_s = 2.0f * SIGMA_S * SIGMA_S;
+  float var_i = 2.0f * SIGMA_I * SIGMA_I;
 
-  IdxType* out = res.data();
-  auto idxes      = eve::views::iota(IdxType{0});
-  auto r_with_idx = eve::views::zip(std::forward<R>(r), idxes);
+  for (int i = 1; i < n - 1; ++i)
+  {
+    float sum = 0.0f;
+    float weight_sum = 0.0f;
+    for (int j = -1; j <= 1; ++j)
+    {
+      float spatial_diff = (float)(j * j);
+      float val_j = in[i + j];
+      float intensity_diff = (in[i] - val_j) * (in[i] - val_j);
+      float weight = std::exp(-(spatial_diff / var_s + intensity_diff / var_i));
 
-  auto for_each    = eve::algo::for_each[eve::algo::no_aligning][eve::algo::unroll<1>];
-  for_each( r_with_idx
-          , [&](eve::algo::iterator auto r_idx_it, eve::relative_conditional_expr auto ignore) mutable
-            {
-              auto [elems_it, idxs_it] = r_idx_it;
-              auto elems = eve::load[ignore](elems_it);
-              auto test = p(elems);
-              out  = eve::compress_copy[eve::unsafe][eve::sparse][ignore][eve::ignore_none](idxs_it, test, out);
-            }
-          );
+      sum += val_j * weight;
+      weight_sum += weight;
+    }
+    out[i] = sum / weight_sum;
+  }
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+</small>
 
-  res.resize(out - res.data());
-  res.shrink_to_fit();
+---
+
+## Stencils
+
+### [Bilateral Filter](https://codereckons.com/tools/z/jPcj4j)
+
+<small>
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+void bilateral_eve(std::span<const float> in, std::span<float> out)
+{
+  using w_t = eve::wide<float>;
+  int N = w_t::size(), n = in.size();
+  int end_simd = (n - 1) - N, i = 1;
+  float var_s = 2.0f * SIGMA_S * SIGMA_S, var_i = 2.0f * SIGMA_I * SIGMA_I;
+
+  for (; i <= end_simd; i += N)
+  {
+    w_t img_i(&in[i]), sum(0.0f), weight_sum(0.0f);
+
+    for (int j = -1; j <= 1; ++j)
+    {
+      float spatial_diff = (float)(j * j);
+      w_t val_j(&in[i + j]);
+      w_t intensity_diff = (img_i - val_j) * (img_i - val_j);
+      w_t weight = eve::exp(-(spatial_diff / var_s + intensity_diff / var_i));
+      sum         += val_j * weight;
+      weight_sum  += weight;
+    }
+    eve::store(sum / weight_sum, &out[i]);
+  }
+
+  if (i < n - 1)
+  {
+    std::size_t tail_start = i - 1;
+    bilateral_scalar(in.subspan(tail_start), out.subspan(tail_start), eve_exp);
+  }
 }
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
