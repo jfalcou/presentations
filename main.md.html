@@ -1,0 +1,475 @@
+<!------------------------------------------------------------------------------------------------->
+<!--
+  Copyright 2026 Joel Falcou
+  Licensed under the terms of the Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)
+-->
+<!------------------------------------------------------------------------------------------------->
+
+<meta charset="utf-8" lang="fr">
+<!------------------------------------------------------------------------------------------------->
+
+**TTS | Des tests, oui, mais des Panzani !**
+<br>
+<small><em><span class="current-date"></span></em></small>
+<br>
+Joel FALCOU
+<br>
+<center><small>![](images/lisn.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
+<center>![](images/ccby40.png style="height: 0.7rem")</center>
+<small><small>Powered by Markdeep and Markdeep-Slides</small></small>
+
+---
+
+# Motivations
+
+---
+
+## Contexte
+
+### Bibliothèques testées avec TTS
+  * eve, kyosu, kumi, kiwaku, polyfloat, fluxion et rotgen.
+  * eve : **875 unités de compilation**, recompilées sur une douzaine de configurations à chaque PR.
+
+### Besoins
+  * Flottants comparés en ULP.
+  * Cas répétés sur des listes de types.
+  * Données générées.
+  * Résultats lisibles par la CI.
+
+### Temps d'attente
+  * Attendre la compilation des tests interrompt le travail à chaque itération.
+  * Le coût du framework est multiplié par le nombre d'unités.
+
+---
+
+## Vue d'ensemble
+
+<div class="cols"><div class="col">
+
+### Principes
+  * En-têtes seuls (*header-only*), C++20
+    * aucune bibliothèque à lier
+    * un en-tête unique et autonome
+  * Compilateurs
+    * g++ 11+, clang 13+
+    * MSVC 2022, clang-cl 15+, emscripten
+  * `TTS_MAIN`
+    * défini dans une seule unité
+    * y génère le `main`
+
+</div><div class="col">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+#define TTS_MAIN
+#include <tts/tts.hpp>
+
+TTS_CASE("Check relationship between values")
+{
+  double x = 12.5;
+  TTS_EQUAL(12.5f, x);
+  TTS_THROW(foo(true), std::runtime_error);
+};
+
+TTS_CASE("Check precision tests")
+{
+  TTS_ABSOLUTE_EQUAL(1., 1.001, 1e-3);
+  TTS_ULP_EQUAL(1. + 1e-16, 1., 0.5);
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div></div>
+
+---
+
+# API
+
+---
+
+## Vérifications
+
+### Familles de macros, préfixe `TTS_` omis
+
+| Famille     | Macros                                                        |
+|-------------|---------------------------------------------------------------|
+| Booléens    | `EXPECT`, `EXPECT_NOT`                                        |
+| Relations   | `EQUAL`, `NOT_EQUAL`, `LESS`, `GREATER`, ...                  |
+| Types       | `TYPED_EQUAL`, `TYPE_IS`, `EXPR_IS`                           |
+| Bits        | `BIT_EQUAL`, `BIT_NOT_EQUAL`                                  |
+| Exceptions  | `THROW`, `NO_THROW`                                           |
+| Précision   | `ABSOLUTE_EQUAL`, `RELATIVE_EQUAL`, `ULP_EQUAL`, `IEEE_EQUAL` |
+| Séquences   | `ALL_EQUAL`, `ALL_ULP_EQUAL`, ...                             |
+| Compilation | `CONSTEXPR_EQUAL`, `EXPECT_COMPILES`, ...                     |
+
+---
+
+## Types et données
+
+### Cas génériques
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+TTS_CASE_TPL("Check types using a types list", tts::types<float, double>)
+<typename T>(tts::type<T>)
+{
+  TTS_EQUAL(1 / T{2}, static_cast<T>(0.5));
+};
+
+TTS_CASE_WITH( "Check behavior for scalar types", (tts::types<int, float, double>)
+             , tts::value{37}, tts::between{0, 100}, tts::randoms{0., 10.}
+             )
+<typename V, typename B, typename R>(V v, B b, R const& r)
+{
+  TTS_EQUAL(v, V{37}, REQUIRED);
+  TTS_LESS_EQUAL(b, B{100});
+  TTS_LESS_EQUAL(r, R{10});
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Précision en ULP
+
+### Choix de la vérification
+  * Valeurs égales par construction : `TTS_EQUAL`.
+  * Résultat d'un nombre indéterminé d'opérations flottantes : `TTS_ULP_EQUAL`.
+  * Erreur bornée quels que soient l'architecture et l'ordre de grandeur : `TTS_RELATIVE_EQUAL`.
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+TTS_CASE("Pi in single precision")
+{
+  double pi = std::numbers::pi;
+  TTS_ULP_EQUAL(double(float(pi)), pi, 2.);
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+[X] [demo.cpp:8] : ** FAILURE ** : Expected: double(float(pi)) == pi
+    but 3.141592741012573 == 3.141592653589793
+    within 9.8e+07 ULP when 2 ULP were expected.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Balayage d'un intervalle
+
+### Fonction comparée à sa référence
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+float reference_x(float x) { return x; }
+float tested_x(float x)    { return x + x * 1e-7f; }
+
+TTS_CASE("Test range check")
+{
+  auto inputs = [](auto, auto i, auto c) { return 100.f * i / c; };
+
+  TTS_ULP_RANGE_CHECK(inputs, float, float, reference_x, tested_x, 2.);
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+Max ULP         Count (#)       Ratio Sum (%)   Samples
+------------------------------------------------------------------------------
+0.5             3540            86.4502         Input:      0.0244140625
+                                                Found:      0.02441406436264515
+                                                instead of: 0.0244140625
+------------------------------------------------------------------------------
+1.0             555             100             Input:      0.1220703125
+                                                Found:      0.1220703274011612
+                                                instead of: 0.1220703125
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+## Personnalisation
+
+### Cinq traits
+  * `precision&lt;T&gt;` : distances ULP, relative, absolue et IEEE.
+  * `display&lt;T&gt;` : affichage ; `comparison&lt;L, R&gt;` : égalité, ordre et bits.
+  * `generation&lt;T&gt;` et `conversion&lt;T, V&gt;` : données générées et leurs bornes.
+  * Seuls les membres redéfinis changent ; ci-dessous, kyosu pour `eve::wide`.
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename T, typename N>
+struct tts::precision<eve::wide<T, N>>
+{
+  static double ulp(eve::wide<T, N> const& l, eve::wide<T, N> const& r)
+  {
+    double m = 0;
+    for(int i = 0; i < l.size(); ++i)
+      m = std::max(m, ulp_check(l.get(i), r.get(i)));
+    return m;
+  }
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+---
+
+# Exécution
+
+---
+
+## Driver et options
+
+### Sortie
+  * `--sink` : `colored`, `tap`, `diagnostics`, `json` ou `junit`.
+  * `--capture=path` écrit la sortie dans un fichier.
+  * Chaque cas est chronométré.
+
+### Contrôle de l'exécution
+  * `--shard=i/n` répartit les cas entre jobs de CI.
+  * `--dry` liste les cas sans les lancer.
+  * `--seed=N` rejoue une exécution ; la graine est affichée à chaque lancement.
+  * Chaque option a sa variable d'environnement : `TTS_SHARD=0/4 ./my_test`.
+
+---
+
+## Sorties structurées
+
+### Deux cas, un réussi, un en échec : `--sink=json` à gauche, `--sink=junit` abrégé à droite
+
+<div class="cols dense"><div class="col">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ json
+{ "tests": [
+    { "name": "Check that expectation can be met",
+      "status": "passed", "duration_ns": 3857,
+      "failures": [] },
+    { "name": "Check that expectation fails",
+      "status": "failed", "duration_ns": 10469,
+      "failures": [
+        { "location": { "file": "sinks.cpp",
+                        "line": 11 },
+          "message":
+            "Expression: 1 == 2 evaluates to false.",
+          "fatal": false } ] } ],
+  "summary": { "total": 2, "passed": 1,
+               "failed": 1, "invalid": 0,
+               "duration_ns": 14326 } }
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div><div class="col">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ xml
+<testsuites>
+<testsuite name="TTS" tests="2" failures="1"
+           errors="0" skipped="0"
+           time="0.000015">
+  <testcase name="Check that expectation can be met"
+            time="0.000003"/>
+  <testcase name="Check that expectation fails"
+            time="0.000012">
+    <failure
+      message="Expression: 1 == 2 evaluates to false.">
+      sinks.cpp:11: ...
+    </failure>
+  </testcase>
+</testsuite>
+</testsuites>
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div></div>
+
+---
+
+## Plantages et délais
+
+<div class="cols"><div class="col">
+
+### Cas bloqués ou plantés
+  * Plantage ou délai dépassé : le rapport est produit malgré tout, avec le nom du cas, et l'exécution échoue.
+  * `--timeout=<ms>` fixe le délai de tous les cas, `TTS_TIMEOUT(ms, nom)` celui d'un seul.
+  * `TTS_XFAIL` déclare un échec attendu.
+  * `--no-crash-guard` laisse le signal au débogueur.
+
+</div><div class="col">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+TTS_CASE(TTS_TIMEOUT(5000, "answers in time"))
+{
+  TTS_EXPECT(true);
+};
+
+TTS_CASE(TTS_XFAIL("known rounding bug"))
+{
+  TTS_EQUAL(1 + 1, 3);
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div></div>
+
+---
+
+# Temps de compilation
+
+---
+
+## Coût d'inclusion
+
+### Origine du coût
+  * Rien n'est compilé à part : chaque en-tête que TTS inclut est analysé **une fois par unité, à
+    chaque compilation**.
+  * Pour eve : 875 unités, multipliées par une douzaine de configurations de CI à chaque PR.
+
+### Règle suivie dans TTS
+  * Un en-tête standard est mesuré avant d'être inclus, parce que son coût ne se déduit pas de son nom.
+  * Mesure sur g++ **et** clang++ : `<chrono>` coûte 460 ms avec l'un et 680 ms avec l'autre.
+  * La PR donne les chiffres avant et après le changement.
+
+---
+
+## En-têtes écartés
+
+### Coût ajouté à une unité `TTS_MAIN` minimale, minimum sur huit compilations
+
+| En-tête           | g++ 13  | clang++ 18 | Remplacement dans TTS              |
+|-------------------|--------:|-----------:|------------------------------------|
+| `<chrono>`        | +460 ms | +680 ms    | `now_ns()`                         |
+| `<regex>`         | +270 ms | +350 ms    | aucun, TTS s'en passe              |
+| `<thread>`        | +200 ms | +240 ms    | aucun, TTS s'en passe              |
+| `<memory>`        | +170 ms | +210 ms    | `file_guard`                       |
+| `<sstream>`       | +140 ms | +190 ms    | `tts::text`                        |
+| `<iostream>`      | +140 ms | +170 ms    | `fputs` sur un `FILE*`             |
+| `<functional>`    | +100 ms | +100 ms    | `callable`                         |
+| `<string>`        |  +90 ms | +110 ms    | `tts::text`                        |
+| `<vector>`        |  +50 ms |  +60 ms    | `tts::buffer`                      |
+
+---
+
+## Unité minimale
+
+### Runner seul, sans aucun cas, médiane de trois compilations `-O0`
+  * Catch2 et GoogleTest compilent leur `main` à part, et le banc ne le compte pas.
+
+<div class="cols"><div class="col">
+
+<img src="images/gcc-include.svg" style="width: 100%; background: white; padding: 0.3rem">
+
+</div><div class="col">
+
+<img src="images/clang-include.svg" style="width: 100%; background: white; padding: 0.3rem">
+
+</div></div>
+
+---
+
+## Coût par cas
+
+### Trois vérifications par cas, de 1 à 200 cas dans l'unité
+
+<div class="cols"><div class="col">
+
+<img src="images/gcc-simple.svg" style="width: 100%; background: white; padding: 0.3rem">
+
+</div><div class="col">
+
+<img src="images/clang-simple.svg" style="width: 100%; background: white; padding: 0.3rem">
+
+</div></div>
+
+---
+
+## Cas génériques
+
+### 100 cas écrits un par type, contre un seul cas générique sur les 100 types
+
+<div class="cols"><div class="col">
+
+<img src="images/gcc-types.svg" style="width: 100%; background: white; padding: 0.3rem">
+
+</div><div class="col">
+
+<img src="images/clang-types.svg" style="width: 100%; background: white; padding: 0.3rem">
+
+</div></div>
+
+---
+
+# Conclusion
+
+---
+
+## Bilan
+
+### Pour les suites numériques
+  * Comparaisons en ULP, cas sur des listes de types et sur des données générées.
+  * Des traits pour adapter ses propres types, comme le fait kyosu.
+
+### Pour la CI
+  * Sorties JSON, JUnit et TAP, répartition entre jobs, plantages et délais attribués au cas.
+
+### Pour le développeur
+  * Une unité minimale compile en 0,17 à 0,23 s, contre 0,63 à 5,20 s pour les cinq autres.
+
+### Ressources
+  * [github.com/jfalcou/tts](https://github.com/jfalcou/tts), version 4.0, licence BSL 1.0 et sa
+    [documentation](https://jfalcou.github.io/tts/).
+
+---
+
+# Merci de votre attention !
+
+<!------------------------------------------------------------------------------------------------->
+<!-- Compact tables, so a ten-row table fits on a slide, and two-column slides -->
+<style>
+  body .md table.table th, body .md table.table td { padding: 0.1rem 0.6rem; line-height: 1.15; }
+  .md .cols { display: flex; gap: 1.5rem; align-items: center; }
+  .md .col  { flex: 1; min-width: 0; }
+  .md .col img { width: 100% !important; max-width: none !important; }
+  .md .dense { font-size: 88%; }
+  body .md .dense pre.listing { line-height: 0.85rem; }
+</style>
+
+<!------------------------------------------------------------------------------------------------->
+<!-- Markdeep slides stuff -->
+<script>
+    markdeepSlidesOptions = {
+        aspectRatio: 16 / 9,
+        theme: 'reckons',
+        fontSize: 22,
+        diagramZoom: 1.0,
+        totalSlideNumber: true,
+        progressBar: true,
+        breakOnHeadings: false,
+        slideChangeHook: (oldSlide, newSlide) => {},
+        modeChangeHook: (newMode) => {}
+    };
+</script>
+<link rel="stylesheet" href="markdeep-slides/lib/markdeep-relative-sizes/1.09/relativize.css">
+<link rel="stylesheet" href="markdeep-slides/markdeep-slides.css">
+<script src="markdeep-slides/markdeep-slides.js"></script>
+
+<!-- Markdeep stuff -->
+<script>
+    markdeepOptions = {
+        tocStyle: 'none',
+        detectMath: false,
+        onLoad: function() {
+            // Markdeep strips tags from the title, so the line break is restored here
+            var title = document.querySelector('.md div.title');
+            if (title) title.innerHTML = title.innerHTML.replace(' | ', '<br>');
+            initSlides();
+        }
+    };
+</script>
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep-slides/lib/markdeep/1.09/markdeep.min.js" charset="utf-8"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
