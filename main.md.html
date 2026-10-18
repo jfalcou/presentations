@@ -50,12 +50,14 @@ Joel FALCOU
   * En-têtes seuls (*header-only*), C++20
     * aucune bibliothèque à lier
     * un en-tête unique et autonome
-  * Compilateurs
-    * g++ 11+, clang 13+
-    * MSVC 2022, clang-cl 15+, emscripten
-  * `TTS_MAIN`
-    * défini dans une seule unité
-    * y génère le `main`
+
+### Compilateurs testés en CI
+  * **Linux** : g++ 15 et 16, clang++ 22 avec libstdc++ et libc++
+  * **Intel** : icpx 2025
+  * **WebAssembly** : emscripten 5
+  * **macOS** : Apple Clang 15, NDK Android
+  * **Windows** : MSVC 19.44, clang-cl 19
+  * **CUDA** : nvcc 13.2, nvc++ 26.3, clang++ 22
 
 </div><div class="col">
 
@@ -83,7 +85,7 @@ TTS_CASE("Check precision tests")
 
 ---
 
-# API
+# Interface utilisateur
 
 ---
 
@@ -130,7 +132,7 @@ TTS_CASE_WITH( "Check behavior for scalar types", (tts::types<int, float, double
 
 ---
 
-## Précision en ULP
+## Tester avec précision
 
 ### Choix de la vérification
   * Valeurs égales par construction : `TTS_EQUAL`.
@@ -161,6 +163,8 @@ TTS_CASE("Pi in single precision")
 
 ### Fonction comparée à sa référence
 
+<div class="dense">
+
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 float reference_x(float x) { return x; }
@@ -189,35 +193,45 @@ Max ULP         Count (#)       Ratio Sum (%)   Samples
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
+</div>
+
 ---
 
 ## Personnalisation
 
+<div class="cols"><div class="col">
+
 ### Cinq traits
   * `precision&lt;T&gt;` : distances ULP, relative, absolue et IEEE.
-  * `display&lt;T&gt;` : affichage ; `comparison&lt;L, R&gt;` : égalité, ordre et bits.
+  * `display&lt;T&gt;` : affichage.
+  * `comparison&lt;L, R&gt;` : égalité, ordre et bits.
   * `generation&lt;T&gt;` et `conversion&lt;T, V&gt;` : données générées et leurs bornes.
-  * Seuls les membres redéfinis changent ; ci-dessous, kyosu pour `eve::wide`.
+
+### Exemple de kyosu
+  * Seuls les membres redéfinis changent.
+  * Nombres complexes et quaternions : distances relative et absolue propres, ULP par défaut.
+
+</div><div class="col small">
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-template<typename T, typename N>
-struct tts::precision<eve::wide<T, N>>
+template<kyosu::concepts::cayley_dickson T>
+struct tts::precision<T>
 {
-  static double ulp(eve::wide<T, N> const& l, eve::wide<T, N> const& r)
+  static double relative(T const& l, T const& r)
   {
-    double m = 0;
-    for(int i = 0; i < l.size(); ++i)
-      m = std::max(m, ulp_check(l.get(i), r.get(i)));
-    return m;
+    return kyosu::reldist(l, r);
+  }
+
+  static double absolute(T const& l, T const& r)
+  {
+    return kyosu::dist(l, r);
   }
 };
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
----
-
-# Exécution
+</div></div>
 
 ---
 
@@ -238,27 +252,35 @@ struct tts::precision<eve::wide<T, N>>
 
 ## Sorties structurées
 
-### Deux cas, un réussi, un en échec : `--sink=json` à gauche, `--sink=junit` abrégé à droite
+### Deux cas, un réussi, un en échec : `--sink=json` à gauche, `--sink=junit` à droite
 
-<div class="cols dense"><div class="col">
+<div class="cols small"><div class="col">
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ json
-{ "tests": [
-    { "name": "Check that expectation can be met",
-      "status": "passed", "duration_ns": 3857,
-      "failures": [] },
-    { "name": "Check that expectation fails",
+{
+  "tests": [
+    {
+      "name": "Check that expectation can be met",
+      "status": "passed", "duration_ns": 3857, "failures": []
+    },
+    {
+      "name": "Check that expectation fails",
       "status": "failed", "duration_ns": 10469,
       "failures": [
-        { "location": { "file": "sinks.cpp",
-                        "line": 11 },
-          "message":
-            "Expression: 1 == 2 evaluates to false.",
-          "fatal": false } ] } ],
-  "summary": { "total": 2, "passed": 1,
-               "failed": 1, "invalid": 0,
-               "duration_ns": 14326 } }
+        {
+          "location": { "file": "sinks.cpp", "line": 11 },
+          "message": "Expression: 1 == 2 evaluates to false.",
+          "fatal": false
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total": 2, "passed": 1, "failed": 1, "invalid": 0,
+    "duration_ns": 14326
+  }
+}
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -266,17 +288,19 @@ struct tts::precision<eve::wide<T, N>>
 
 <script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ xml
+<?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
 <testsuite name="TTS" tests="2" failures="1"
-           errors="0" skipped="0"
-           time="0.000015">
+           errors="0" skipped="0" time="0.000017">
   <testcase name="Check that expectation can be met"
+            classname="Check that expectation can be met"
             time="0.000003"/>
   <testcase name="Check that expectation fails"
-            time="0.000012">
+            classname="Check that expectation fails"
+            time="0.000013">
     <failure
       message="Expression: 1 == 2 evaluates to false.">
-      sinks.cpp:11: ...
+      sinks.cpp:11: Expression: 1 == 2 evaluates to false.
     </failure>
   </testcase>
 </testsuite>
@@ -290,13 +314,20 @@ struct tts::precision<eve::wide<T, N>>
 
 ## Plantages et délais
 
-<div class="cols"><div class="col">
+<div class="cols small"><div class="col">
 
-### Cas bloqués ou plantés
-  * Plantage ou délai dépassé : le rapport est produit malgré tout, avec le nom du cas, et l'exécution échoue.
-  * `--timeout=<ms>` fixe le délai de tous les cas, `TTS_TIMEOUT(ms, nom)` celui d'un seul.
-  * `TTS_XFAIL` déclare un échec attendu.
+### Plantages
+  * Le rapport nomme le cas planté, et l'exécution échoue.
   * `--no-crash-guard` laisse le signal au débogueur.
+
+### Délais
+  * `--timeout=<ms>` : délai de tous les cas.
+  * `TTS_TIMEOUT(ms, nom)` : délai d'un cas, `0` l'en exempte.
+
+### Échecs attendus
+  * `TTS_XFAIL` : le cas doit échouer.
+  * `TTS_MAYFAIL` : le cas peut réussir ou échouer.
+  * `TTS_XINVALID` : le cas ne doit lancer aucune vérification.
 
 </div><div class="col">
 
@@ -311,6 +342,15 @@ TTS_CASE(TTS_XFAIL("known rounding bug"))
 {
   TTS_EQUAL(1 + 1, 3);
 };
+
+TTS_CASE(TTS_MAYFAIL("flaky under load on some runners"))
+{
+  TTS_EXPECT(true);
+};
+
+TTS_CASE(TTS_XINVALID("scenario not written yet"))
+{
+};
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 </script>
 
@@ -322,42 +362,25 @@ TTS_CASE(TTS_XFAIL("known rounding bug"))
 
 ---
 
-## Coût d'inclusion
-
-### Origine du coût
-  * Rien n'est compilé à part : chaque en-tête que TTS inclut est analysé **une fois par unité, à
-    chaque compilation**.
-  * Pour eve : 875 unités, multipliées par une douzaine de configurations de CI à chaque PR.
-
-### Règle suivie dans TTS
-  * Un en-tête standard est mesuré avant d'être inclus, parce que son coût ne se déduit pas de son nom.
-  * Mesure sur g++ **et** clang++ : `<chrono>` coûte 460 ms avec l'un et 680 ms avec l'autre.
-  * La PR donne les chiffres avant et après le changement.
-
----
-
 ## En-têtes écartés
 
-### Coût ajouté à une unité `TTS_MAIN` minimale, minimum sur huit compilations
-
-| En-tête           | g++ 13  | clang++ 18 | Remplacement dans TTS              |
-|-------------------|--------:|-----------:|------------------------------------|
-| `<chrono>`        | +460 ms | +680 ms    | `now_ns()`                         |
-| `<regex>`         | +270 ms | +350 ms    | aucun, TTS s'en passe              |
-| `<thread>`        | +200 ms | +240 ms    | aucun, TTS s'en passe              |
-| `<memory>`        | +170 ms | +210 ms    | `file_guard`                       |
-| `<sstream>`       | +140 ms | +190 ms    | `tts::text`                        |
-| `<iostream>`      | +140 ms | +170 ms    | `fputs` sur un `FILE*`             |
-| `<functional>`    | +100 ms | +100 ms    | `callable`                         |
-| `<string>`        |  +90 ms | +110 ms    | `tts::text`                        |
-| `<vector>`        |  +50 ms |  +60 ms    | `tts::buffer`                      |
+| En-tête           | g++ 15.2 | clang++ 22.1 | Remplacement dans TTS              |
+|-------------------|---------:|-------------:|------------------------------------|
+| `<chrono>`        | +500 ms  | +920 ms      | `now_ns()`                         |
+| `<regex>`         | +250 ms  | +370 ms      | aucun, TTS s'en passe              |
+| `<thread>`        | +200 ms  | +260 ms      | aucun, TTS s'en passe              |
+| `<memory>`        | +150 ms  | +240 ms      | `file_guard`                       |
+| `<sstream>`       | +140 ms  | +210 ms      | `tts::text`                        |
+| `<iostream>`      | +140 ms  | +200 ms      | `fputs` sur un `FILE*`             |
+| `<functional>`    |  +90 ms  | +140 ms      | `callable`                         |
+| `<string>`        |  +90 ms  | +140 ms      | `tts::text`                        |
+| `<vector>`        |  +60 ms  |  +90 ms      | `tts::buffer`                      |
 
 ---
 
-## Unité minimale
+## Inclusion seule
 
-### Runner seul, sans aucun cas, médiane de trois compilations `-O0`
-  * Catch2 et GoogleTest compilent leur `main` à part, et le banc ne le compte pas.
+### Fichier de test vide
 
 <div class="cols"><div class="col">
 
@@ -371,33 +394,33 @@ TTS_CASE(TTS_XFAIL("known rounding bug"))
 
 ---
 
-## Coût par cas
+## Plus petit exécutable
 
-### Trois vérifications par cas, de 1 à 200 cas dans l'unité
+### Fichier d'un cas
 
 <div class="cols"><div class="col">
 
-<img src="images/gcc-simple.svg" style="width: 100%; background: white; padding: 0.3rem">
+<img src="images/gcc-one.svg" style="width: 100%; background: white; padding: 0.3rem">
 
 </div><div class="col">
 
-<img src="images/clang-simple.svg" style="width: 100%; background: white; padding: 0.3rem">
+<img src="images/clang-one.svg" style="width: 100%; background: white; padding: 0.3rem">
 
 </div></div>
 
 ---
 
-## Cas génériques
+## Coût par cas
 
-### 100 cas écrits un par type, contre un seul cas générique sur les 100 types
+### Fichier de 200 cas
 
 <div class="cols"><div class="col">
 
-<img src="images/gcc-types.svg" style="width: 100%; background: white; padding: 0.3rem">
+<img src="images/gcc-tests.svg" style="width: 100%; background: white; padding: 0.3rem">
 
 </div><div class="col">
 
-<img src="images/clang-types.svg" style="width: 100%; background: white; padding: 0.3rem">
+<img src="images/clang-tests.svg" style="width: 100%; background: white; padding: 0.3rem">
 
 </div></div>
 
@@ -407,21 +430,64 @@ TTS_CASE(TTS_XFAIL("known rounding bug"))
 
 ---
 
+## Comparaison
+
+<div class="tiny">
+
+| | TTS 4.0 | ut 2.3.1 | doctest 2.5.3 | Boost.Test 1.90 | Catch2 3.16.1 | GoogleTest 1.18.0 |
+|:--|:-:|:-:|:-:|:-:|:-:|:-:|
+| En-têtes seuls | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+| Tolérance en ULP | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="half">≈</span> |
+| Balayage en ULP | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+| Générateurs de données | <span class="yes">✔</span> | <span class="half">≈</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Tests à la compilation | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="half">≈</span> |
+| Sous-cas rejoués | <span class="yes">✔</span> | <span class="half">≈</span> | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="no">✘</span> |
+| Répartition entre jobs | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="half">≈</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Sortie JSON | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Sortie TAP | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="no">✘</span> |
+| Plantage attribué au cas | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="half">≈</span> |
+| Arrêt d'un cas bloqué | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="half">≈</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+| Contexte des échecs | <span class="half">≈</span> | <span class="half">≈</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Style BDD | <span class="half">≈</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="no">✘</span> |
+| Filtre par nom | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Fixtures | <span class="no">✘</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Ordre aléatoire | <span class="no">✘</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Matchers | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Tests de mort | <span class="no">✘</span> | <span class="half">≈</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="yes">✔</span> |
+
+</div>
+
+---
+
 ## Bilan
 
+<div class="cols top"><div class="col">
+
 ### Pour les suites numériques
-  * Comparaisons en ULP, cas sur des listes de types et sur des données générées.
-  * Des traits pour adapter ses propres types, comme le fait kyosu.
+  * Comparaisons en ULP, relatives et absolues.
+  * Cas sur des listes de types et sur des données générées.
+  * Traits pour adapter ses propres types, comme kyosu ou eve.
 
 ### Pour la CI
-  * Sorties JSON, JUnit et TAP, répartition entre jobs, plantages et délais attribués au cas.
+  * Sorties JSON, JUnit et TAP.
+  * Répartition des cas entre jobs.
+  * Plantages et délais attribués au cas.
+
+</div><div class="col">
 
 ### Pour le développeur
-  * Une unité minimale compile en 0,17 à 0,23 s, contre 0,63 à 5,20 s pour les cinq autres.
+  * En-têtes seuls, C++20.
+  * Rien à construire ni à lier.
+  * Coût d'un cas, le plus bas des six :
+    * 1,4 ms avec g++
+    * 0,5 ms avec clang++
 
 ### Ressources
-  * [github.com/jfalcou/tts](https://github.com/jfalcou/tts), version 4.0, licence BSL 1.0 et sa
-    [documentation](https://jfalcou.github.io/tts/).
+  * Code : [github.com/jfalcou/tts](https://github.com/jfalcou/tts)
+  * Documentation : [jfalcou.github.io/tts](https://jfalcou.github.io/tts/)
+  * Licence : BSL 1.0
+
+</div></div>
 
 ---
 
@@ -433,9 +499,17 @@ TTS_CASE(TTS_XFAIL("known rounding bug"))
   body .md table.table th, body .md table.table td { padding: 0.1rem 0.6rem; line-height: 1.15; }
   .md .cols { display: flex; gap: 1.5rem; align-items: center; }
   .md .col  { flex: 1; min-width: 0; }
+  .md .cols.top { align-items: flex-start; }
+  .md .yes { color: #2e8b57; font-weight: bold; }
+  .md .no  { color: #c0392b; font-weight: bold; }
+  .md .half { color: #e67e22; font-weight: bold; font-size: 120%; line-height: 1; -webkit-text-stroke: 0.05em currentColor; }
   .md .col img { width: 100% !important; max-width: none !important; }
   .md .dense { font-size: 88%; }
   body .md .dense pre.listing { line-height: 0.85rem; }
+  .md .small { font-size: 76%; }
+  .md .tiny { font-size: 76%; }
+  body .md .tiny table.table th, body .md .tiny table.table td { padding: 0.05rem 0.6rem; }
+  body .md .small pre.listing { line-height: 0.75rem; }
 </style>
 
 <!------------------------------------------------------------------------------------------------->

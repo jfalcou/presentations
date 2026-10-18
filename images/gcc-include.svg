@@ -1,29 +1,64 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 252" font-family="sans-serif" font-size="12">
-<text x="96" y="22" fill="#808080" font-size="14">g++ 15.2.0 -O0, minimal include cost</text>
-<line x1="96.0" x2="96.0" y1="40" y2="208" stroke="#808080" stroke-opacity="0.3"/>
-<text x="96.0" y="224" fill="#808080" text-anchor="middle">0 s</text>
-<line x1="254.0" x2="254.0" y1="40" y2="208" stroke="#808080" stroke-opacity="0.3"/>
-<text x="254.0" y="224" fill="#808080" text-anchor="middle">2 s</text>
-<line x1="412.0" x2="412.0" y1="40" y2="208" stroke="#808080" stroke-opacity="0.3"/>
-<text x="412.0" y="224" fill="#808080" text-anchor="middle">4 s</text>
-<line x1="570.0" x2="570.0" y1="40" y2="208" stroke="#808080" stroke-opacity="0.3"/>
-<text x="570.0" y="224" fill="#808080" text-anchor="middle">6 s</text>
-<text x="88" y="58" fill="#d1495b" font-weight="bold" text-anchor="end">TTS</text>
-<rect x="96" y="46" width="17.8" height="16" fill="#d1495b"/>
-<text x="119.8" y="58" fill="#808080">0.23 s, 60 MiB</text>
-<text x="88" y="86" fill="#e09f3e" font-weight="bold" text-anchor="end">GoogleTest</text>
-<rect x="96" y="74" width="49.5" height="16" fill="#e09f3e"/>
-<text x="151.5" y="86" fill="#808080">0.63 s, 177 MiB</text>
-<text x="88" y="114" fill="#2e86ab" font-weight="bold" text-anchor="end">Catch2</text>
-<rect x="96" y="102" width="50.5" height="16" fill="#2e86ab"/>
-<text x="152.5" y="114" fill="#808080">0.64 s, 162 MiB</text>
-<text x="88" y="142" fill="#5c8a8a" font-weight="bold" text-anchor="end">ut</text>
-<rect x="96" y="130" width="81.5" height="16" fill="#5c8a8a"/>
-<text x="183.5" y="142" fill="#808080">1.03 s, 228 MiB</text>
-<text x="88" y="170" fill="#3fa34d" font-weight="bold" text-anchor="end">doctest</text>
-<rect x="96" y="158" width="120.7" height="16" fill="#3fa34d"/>
-<text x="222.7" y="170" fill="#808080">1.53 s, 248 MiB</text>
-<text x="88" y="198" fill="#8e6bbf" font-weight="bold" text-anchor="end">Boost.Test</text>
-<rect x="96" y="186" width="410.8" height="16" fill="#8e6bbf"/>
-<text x="512.8" y="198" fill="#808080">5.20 s, 538 MiB</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" font-family="sans-serif" font-size="12">
+<text x="56.0" y="22.0" fill="#808080" font-size="14">g++ 15.2.0 -O0, a test file with no test</text>
+<line x1="56.0" x2="704.0" y1="340.0" y2="340.0" stroke="#808080" stroke-opacity="0.3"/>
+<text x="50.0" y="344.0" fill="#808080" text-anchor="end">0 s</text>
+<line x1="56.0" x2="704.0" y1="280.0" y2="280.0" stroke="#808080" stroke-opacity="0.3"/>
+<text x="50.0" y="284.0" fill="#808080" text-anchor="end">0.2 s</text>
+<line x1="56.0" x2="704.0" y1="220.0" y2="220.0" stroke="#808080" stroke-opacity="0.3"/>
+<text x="50.0" y="224.0" fill="#808080" text-anchor="end">0.4 s</text>
+<line x1="56.0" x2="704.0" y1="160.0" y2="160.0" stroke="#808080" stroke-opacity="0.3"/>
+<text x="50.0" y="164.0" fill="#808080" text-anchor="end">0.6 s</text>
+<line x1="56.0" x2="704.0" y1="100.0" y2="100.0" stroke="#808080" stroke-opacity="0.3"/>
+<text x="50.0" y="104.0" fill="#808080" text-anchor="end">0.8 s</text>
+<line x1="56.0" x2="704.0" y1="40.0" y2="40.0" stroke="#808080" stroke-opacity="0.3"/>
+<text x="50.0" y="44.0" fill="#808080" text-anchor="end">1 s</text>
+<rect x="72.2" y="334.8" width="48.6" height="5.2" fill="#3fa34d"/>
+<text x="96.5" y="328.3" fill="#808080" text-anchor="middle">0.017 s</text>
+<text x="96.5" y="356.0" fill="#3fa34d" font-weight="bold" text-anchor="middle">doctest</text>
+<text x="96.5" y="369.0" fill="#808080" text-anchor="middle">30 MiB</text>
+<rect x="153.2" y="334.4" width="48.6" height="5.6" fill="#86c98e"/>
+<text x="177.5" y="327.9" fill="#808080" text-anchor="middle">0.019 s</text>
+<text x="177.5" y="356.0" fill="#86c98e" font-weight="bold" text-anchor="middle">doctest</text>
+<text x="177.5" y="369.0" fill="#86c98e" font-weight="bold" text-anchor="middle">fast</text>
+<text x="177.5" y="382.0" fill="#808080" text-anchor="middle">30 MiB</text>
+<rect x="234.2" y="321.1" width="48.6" height="18.9" fill="#d1495b"/>
+<text x="258.5" y="314.6" fill="#808080" text-anchor="middle">0.063 s</text>
+<text x="258.5" y="356.0" fill="#d1495b" font-weight="bold" text-anchor="middle">TTS</text>
+<text x="258.5" y="369.0" fill="#808080" text-anchor="middle">43 MiB</text>
+<rect x="315.2" y="198.7" width="48.6" height="141.3" fill="#8e6bbf"/>
+<line x1="339.5" x2="339.5" y1="201.5" y2="196.5" stroke="#808080" stroke-width="1.5"/>
+<line x1="334.5" x2="344.5" y1="201.5" y2="201.5" stroke="#808080" stroke-width="1.5"/>
+<line x1="334.5" x2="344.5" y1="196.5" y2="196.5" stroke="#808080" stroke-width="1.5"/>
+<text x="339.5" y="190.5" fill="#808080" text-anchor="middle">0.471 s</text>
+<text x="339.5" y="356.0" fill="#8e6bbf" font-weight="bold" text-anchor="middle">Boost.Test</text>
+<text x="339.5" y="369.0" fill="#808080" text-anchor="middle">189 MiB</text>
+<rect x="396.2" y="189.2" width="48.6" height="150.8" fill="#e09f3e"/>
+<line x1="420.5" x2="420.5" y1="191.9" y2="185.2" stroke="#808080" stroke-width="1.5"/>
+<line x1="415.5" x2="425.5" y1="191.9" y2="191.9" stroke="#808080" stroke-width="1.5"/>
+<line x1="415.5" x2="425.5" y1="185.2" y2="185.2" stroke="#808080" stroke-width="1.5"/>
+<text x="420.5" y="179.2" fill="#808080" text-anchor="middle">0.503 s</text>
+<text x="420.5" y="356.0" fill="#e09f3e" font-weight="bold" text-anchor="middle">GoogleTest</text>
+<text x="420.5" y="369.0" fill="#808080" text-anchor="middle">175 MiB</text>
+<rect x="477.2" y="188.1" width="48.6" height="151.9" fill="#7fb8d6"/>
+<line x1="501.5" x2="501.5" y1="191.5" y2="180.2" stroke="#808080" stroke-width="1.5"/>
+<line x1="496.5" x2="506.5" y1="191.5" y2="191.5" stroke="#808080" stroke-width="1.5"/>
+<line x1="496.5" x2="506.5" y1="180.2" y2="180.2" stroke="#808080" stroke-width="1.5"/>
+<text x="501.5" y="174.2" fill="#808080" text-anchor="middle">0.506 s</text>
+<text x="501.5" y="356.0" fill="#7fb8d6" font-weight="bold" text-anchor="middle">Catch2</text>
+<text x="501.5" y="369.0" fill="#7fb8d6" font-weight="bold" text-anchor="middle">fast</text>
+<text x="501.5" y="382.0" fill="#808080" text-anchor="middle">161 MiB</text>
+<rect x="558.2" y="186.3" width="48.6" height="153.7" fill="#2e86ab"/>
+<line x1="582.5" x2="582.5" y1="188.3" y2="177.1" stroke="#808080" stroke-width="1.5"/>
+<line x1="577.5" x2="587.5" y1="188.3" y2="188.3" stroke="#808080" stroke-width="1.5"/>
+<line x1="577.5" x2="587.5" y1="177.1" y2="177.1" stroke="#808080" stroke-width="1.5"/>
+<text x="582.5" y="171.1" fill="#808080" text-anchor="middle">0.512 s</text>
+<text x="582.5" y="356.0" fill="#2e86ab" font-weight="bold" text-anchor="middle">Catch2</text>
+<text x="582.5" y="369.0" fill="#808080" text-anchor="middle">161 MiB</text>
+<rect x="639.2" y="88.9" width="48.6" height="251.1" fill="#5c8a8a"/>
+<line x1="663.5" x2="663.5" y1="98.2" y2="72.2" stroke="#808080" stroke-width="1.5"/>
+<line x1="658.5" x2="668.5" y1="98.2" y2="98.2" stroke="#808080" stroke-width="1.5"/>
+<line x1="658.5" x2="668.5" y1="72.2" y2="72.2" stroke="#808080" stroke-width="1.5"/>
+<text x="663.5" y="66.2" fill="#808080" text-anchor="middle">0.837 s</text>
+<text x="663.5" y="356.0" fill="#5c8a8a" font-weight="bold" text-anchor="middle">ut</text>
+<text x="663.5" y="369.0" fill="#808080" text-anchor="middle">225 MiB</text>
 </svg>
