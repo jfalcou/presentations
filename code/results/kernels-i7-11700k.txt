@@ -1,0 +1,56 @@
+11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz, one core pinned, powersave governor
+g++ (Debian 15.2.0-7) 15.2.0, -std=c++20 -O3 -DNDEBUG -march=<arch>
+reference_kernels.cpp, ns per element, median of 1001 runs (4096 elements) or 101 runs (2^20 elements)
+
+columns: std::complex | kyosu, interleaved | kyosu, separate parts
+
+== -march=x86-64-v2, 4096
+  caxpy         1.151               0.490                  0.445
+  cdotc         0.926               0.329                  0.209
+  exp           8.779               3.954                  3.691
+== -march=x86-64-v3, 4096
+  caxpy         0.974               0.522                  0.206
+  cdotc         0.822               0.312                  0.143
+  exp           8.798               1.901                  1.641
+== -march=x86-64-v4, 4096
+  caxpy         0.974               0.134                  0.143
+  cdotc         0.822               0.148                  0.136
+  exp           8.801               0.823                  0.817
+
+== -march=x86-64-v2 -fcx-limited-range, 4096
+  caxpy         0.268               0.492                  0.441
+  cdotc         0.822               0.333                  0.209
+  exp           8.779               3.942                  3.680
+== -march=x86-64-v3 -fcx-limited-range, 4096
+  caxpy         0.167               0.519                  0.206
+  cdotc         0.838               0.312                  0.143
+  exp           8.800               1.901                  1.636
+== -march=x86-64-v4 -fcx-limited-range, 4096
+  caxpy         0.158               0.134                  0.143
+  cdotc         0.825               0.149                  0.136
+  exp           8.800               0.824                  0.809
+
+== -march=x86-64-v2, 2^20
+  caxpy         1.057               0.524                  0.385
+  cdotc         0.964               0.444                  0.306
+  exp           8.810               3.983                  3.750
+== -march=x86-64-v2 -fcx-limited-range, 2^20
+  caxpy         0.439               0.528                  0.384
+  cdotc         0.855               0.445                  0.312
+  exp           8.810               3.934                  3.687
+== -march=x86-64-v3, 2^20
+  caxpy         0.902               0.576                  0.319
+  cdotc         0.862               0.400                  0.270
+  exp           8.813               1.975                  1.592
+== -march=x86-64-v3 -fcx-limited-range, 2^20
+  caxpy         0.362               0.575                  0.303
+  cdotc         0.878               0.399                  0.260
+  exp           8.808               2.071                  1.592
+== -march=x86-64-v4, 2^20
+  caxpy         0.902               0.313                  0.291
+  cdotc         0.862               0.272                  0.240
+  exp           8.808               0.836                  0.778
+== -march=x86-64-v4 -fcx-limited-range, 2^20
+  caxpy         0.303               0.313                  0.303
+  cdotc         0.882               0.272                  0.248
+  exp           8.808               0.837                  0.783

@@ -1,0 +1,152 @@
+load 0.02 0.05 0.13
+model name	: 11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz
+g++ (Debian 15.2.0-7) 15.2.0
+
+== aos_load
+(-1,0) (0,2) (3,4) (8,6) (15,8) (24,10) (35,12) (48,14) 
+
+== energy
+3.8688
+(3.46869, 4.92507, -1.88453, -3.68773)
+
+== extend
+1.69392 - 0.78956i - 1.18434j - 1.57912k 
+1.69392 - 0.78956i - 1.18434j - 1.57912k 
+
+== kumi_algorithms
+( 98, 4.5, 7 ) 109.5
+( ( 1, 2, 3 ), ( a, b, c ) )
+( ( 1, x ), ( 2, x ), ( 1, y ), ( 2, y ) )
+( 1.5, -2, 0, 4 ) 1
+
+== mixed_dimensions
+c + q = 2 + 4i + 3j + 4k 
+q * o = -28 + 4i + 6j + 8k - 60l + 20li + 14lj + 32lk 
+i * j = 0 + 0i + 0j + 1k 
+j * i = 0 + 0i + 0j - 1k 
+q / c      = 1 + 0i - 1j + 2k 
+ldiv(c, q) = 1 + 0i + 2.2j - 0.4k 
+
+== options
+0 + 1i | -nan
+-inf + 0i | -inf + nani 
+-2.23191e-10 + 0i | 0 + 0i 
+2.22045e-16 1 0
+
+== registers
+z      = (1 + 0i , 2 + 0.5i , 3 + 1i , 4 + 1.5i )
+abs(z) = (1, 2.06155, 3.16228, 4.272)
+exp(z) = (2.71828 + 0i , 6.48451 + 3.5425i , 10.8523 + 16.9014i , 3.86212 + 54.4614i )
+
+== sqr_every_dimension
+complex:    -3 + 4i 
+quaternion: -28 + 4i + 6j + 8k 
+octonion:   -202 + 4i + 6j + 8k + 10l + 12li + 14lj + 16lk 
+
+== reference kernels, -march=x86-64-v2 
+n = 4096, median of 1001 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         1.151               0.492                  0.473
+  cdotc         0.927               0.333                  0.209
+  exp           8.810               3.940                  3.694
+exp 2.41658 0 | 2.41658 0
+checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
+
+== reference kernels, -march=x86-64-v2 
+n = 1048576, median of 101 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         1.053               0.532                  0.388
+  cdotc         0.962               0.448                  0.318
+  exp           8.786               3.935                  3.688
+exp 1.97326 1.39503 | 1.97326 1.39503
+checksum 3.31905e+09 -1.63855e+09 6.59349e+09 6.59349e+09 93.6723
+
+== reference kernels, -march=x86-64-v2 -fcx-limited-range
+n = 4096, median of 1001 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.269               0.495                  0.465
+  cdotc         0.822               0.329                  0.209
+  exp           8.774               3.974                  3.739
+exp 2.41658 0 | 2.41658 0
+checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
+
+== reference kernels, -march=x86-64-v2 -fcx-limited-range
+n = 1048576, median of 101 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.424               0.523                  0.385
+  cdotc         0.851               0.438                  0.305
+  exp           8.810               3.934                  3.686
+exp 1.97326 1.39503 | 1.97326 1.39503
+checksum 3.31905e+09 -1.63855e+09 6.59349e+09 6.59349e+09 93.6723
+
+== reference kernels, -march=x86-64-v3 
+n = 4096, median of 1001 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.974               0.519                  0.206
+  cdotc         0.822               0.312                  0.142
+  exp           8.799               1.903                  1.655
+exp 2.41658 0 | 2.41658 0
+checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
+
+== reference kernels, -march=x86-64-v3 
+n = 1048576, median of 101 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.898               0.586                  0.302
+  cdotc         0.858               0.408                  0.258
+  exp           8.809               1.901                  1.589
+exp 1.97326 1.39503 | 1.97326 1.39503
+checksum 3.31905e+09 -1.63855e+09 6.59375e+09 6.59375e+09 93.6723
+
+== reference kernels, -march=x86-64-v3 -fcx-limited-range
+n = 4096, median of 1001 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.168               0.521                  0.324
+  cdotc         0.838               0.312                  0.142
+  exp           8.807               1.901                  1.656
+exp 2.41658 0 | 2.41658 0
+checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
+
+== reference kernels, -march=x86-64-v3 -fcx-limited-range
+n = 1048576, median of 101 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.352               0.584                  0.303
+  cdotc         0.874               0.409                  0.260
+  exp           8.809               1.904                  1.592
+exp 1.97326 1.39503 | 1.97326 1.39503
+checksum 3.31905e+09 -1.63855e+09 6.59375e+09 6.59375e+09 93.6723
+
+== reference kernels, -march=x86-64-v4 
+n = 4096, median of 1001 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.974               0.133                  0.141
+  cdotc         0.822               0.149                  0.136
+  exp           8.922               0.823                  0.832
+exp 2.41658 0 | 2.41658 0
+checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
+
+== reference kernels, -march=x86-64-v4 
+n = 1048576, median of 101 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.902               0.309                  0.295
+  cdotc         0.862               0.266                  0.239
+  exp           8.819               0.842                  0.793
+exp 1.97326 1.39503 | 1.97326 1.39503
+checksum 3.31905e+09 -1.63855e+09 6.59359e+09 6.59359e+09 93.6723
+
+== reference kernels, -march=x86-64-v4 -fcx-limited-range
+n = 4096, median of 1001 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.158               0.133                  0.143
+  cdotc         0.898               0.149                  0.136
+  exp           8.800               0.820                  0.820
+exp 2.41658 0 | 2.41658 0
+checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
+
+== reference kernels, -march=x86-64-v4 -fcx-limited-range
+n = 1048576, median of 101 runs, ns per element
+         std::complex  kyosu, interleaved  kyosu, separate parts
+  caxpy         0.301               0.316                  0.288
+  cdotc         0.879               0.270                  0.239
+  exp           8.809               0.846                  0.781
+exp 1.97326 1.39503 | 1.97326 1.39503
+checksum 3.31905e+09 -1.63855e+09 6.59359e+09 6.59359e+09 93.6723

@@ -1,0 +1,105 @@
+16 threads, load 0.00 0.00 0.00
+model name	: 11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz
+g++ (Debian 15.2.0-7) 15.2.0
+
+== -march=x86-64-v2
+X86 SSE4.2, 4 lanes of float, median of 9 runs
+
+full set, 200 iterations
+  std::complex           65.78 ms  x1.00         25579276 iterations
+  kyosu scalar z*z       67.27 ms  x0.98         25579276 iterations
+  kyosu scalar sqr       68.84 ms  x0.96         25579640 iterations
+  kyosu wide z*z         18.53 ms  x3.55         25579276 iterations
+  kyosu wide sqr         18.86 ms  x3.49         25579640 iterations
+
+zoom x10^4, 2000 iterations
+  std::complex          254.27 ms  x1.00         92608517 iterations
+  kyosu scalar z*z      260.35 ms  x0.98         92608517 iterations
+  kyosu scalar sqr      264.45 ms  x0.96         92630587 iterations
+  kyosu wide z*z         85.48 ms  x2.97         92608517 iterations
+  kyosu wide sqr         86.50 ms  x2.94         92630587 iterations
+
+== -march=x86-64-v2 -fcx-limited-range
+X86 SSE4.2, 4 lanes of float, median of 9 runs
+
+full set, 200 iterations
+  std::complex           65.82 ms  x1.00         25579276 iterations
+  kyosu scalar z*z       67.27 ms  x0.98         25579276 iterations
+  kyosu scalar sqr       68.84 ms  x0.96         25579640 iterations
+  kyosu wide z*z         18.53 ms  x3.55         25579276 iterations
+  kyosu wide sqr         18.86 ms  x3.49         25579640 iterations
+
+zoom x10^4, 2000 iterations
+  std::complex          254.27 ms  x1.00         92608517 iterations
+  kyosu scalar z*z      260.22 ms  x0.98         92608517 iterations
+  kyosu scalar sqr      264.46 ms  x0.96         92630587 iterations
+  kyosu wide z*z         85.48 ms  x2.97         92608517 iterations
+  kyosu wide sqr         86.50 ms  x2.94         92630587 iterations
+
+== -march=x86-64-v3
+X86 AVX2 (with FMA3 support), 8 lanes of float, median of 9 runs
+
+full set, 200 iterations
+  std::complex           63.04 ms  x1.00         25579276 iterations
+  kyosu scalar z*z       65.08 ms  x0.97         25579476 iterations
+  kyosu scalar sqr       48.27 ms  x1.31         25580864 iterations
+  kyosu wide z*z          9.17 ms  x6.87         25579476 iterations
+  kyosu wide sqr          7.15 ms  x8.81         25580864 iterations
+
+zoom x10^4, 2000 iterations
+  std::complex          244.76 ms  x1.00         92608517 iterations
+  kyosu scalar z*z      254.59 ms  x0.96         92700860 iterations
+  kyosu scalar sqr      187.34 ms  x1.31         92672290 iterations
+  kyosu wide z*z         48.43 ms  x5.05         92700860 iterations
+  kyosu wide sqr         37.04 ms  x6.61         92672290 iterations
+
+== -march=x86-64-v3 -fcx-limited-range
+X86 AVX2 (with FMA3 support), 8 lanes of float, median of 9 runs
+
+full set, 200 iterations
+  std::complex           63.04 ms  x1.00         25579276 iterations
+  kyosu scalar z*z       65.07 ms  x0.97         25579476 iterations
+  kyosu scalar sqr       48.27 ms  x1.31         25580864 iterations
+  kyosu wide z*z          9.17 ms  x6.87         25579476 iterations
+  kyosu wide sqr          7.15 ms  x8.81         25580864 iterations
+
+zoom x10^4, 2000 iterations
+  std::complex          244.76 ms  x1.00         92608517 iterations
+  kyosu scalar z*z      254.59 ms  x0.96         92700860 iterations
+  kyosu scalar sqr      187.35 ms  x1.31         92672290 iterations
+  kyosu wide z*z         48.43 ms  x5.05         92700860 iterations
+  kyosu wide sqr         37.04 ms  x6.61         92672290 iterations
+
+== -march=x86-64-v4
+X86 AVX512 (with FMA3 support), 16 lanes of float, median of 9 runs
+
+full set, 200 iterations
+  std::complex           63.02 ms  x1.00         25579276 iterations
+  kyosu scalar z*z       65.08 ms  x0.97         25579476 iterations
+  kyosu scalar sqr       48.27 ms  x1.31         25580864 iterations
+  kyosu wide z*z          5.25 ms  x12.01        25579476 iterations
+  kyosu wide sqr          4.79 ms  x13.17        25580864 iterations
+
+zoom x10^4, 2000 iterations
+  std::complex          244.77 ms  x1.00         92608517 iterations
+  kyosu scalar z*z      254.60 ms  x0.96         92700860 iterations
+  kyosu scalar sqr      187.33 ms  x1.31         92672290 iterations
+  kyosu wide z*z         31.88 ms  x7.68         92700860 iterations
+  kyosu wide sqr         28.73 ms  x8.52         92672290 iterations
+
+== -march=x86-64-v4 -fcx-limited-range
+X86 AVX512 (with FMA3 support), 16 lanes of float, median of 9 runs
+
+full set, 200 iterations
+  std::complex           63.02 ms  x1.00         25579276 iterations
+  kyosu scalar z*z       65.08 ms  x0.97         25579476 iterations
+  kyosu scalar sqr       48.27 ms  x1.31         25580864 iterations
+  kyosu wide z*z          5.25 ms  x12.01        25579476 iterations
+  kyosu wide sqr          4.79 ms  x13.17        25580864 iterations
+
+zoom x10^4, 2000 iterations
+  std::complex          244.76 ms  x1.00         92608517 iterations
+  kyosu scalar z*z      254.60 ms  x0.96         92700860 iterations
+  kyosu scalar sqr      187.34 ms  x1.31         92672290 iterations
+  kyosu wide z*z         31.88 ms  x7.68         92700860 iterations
+  kyosu wide sqr         28.73 ms  x8.52         92672290 iterations

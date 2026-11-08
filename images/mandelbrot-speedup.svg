@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Speedup of kyosu on eve::wide over std::complex on the Mandelbrot set, per instruction set, full set and zoom, i7-11700K, g++ 15.2" style="display:block;margin:0 auto;max-width:100%;height:auto;font-family:inherit;font-size:13px">
+<style>text{fill:#173236}.v{font-size:12px}.halo{paint-order:stroke;stroke:#ffffff;stroke-width:4px;stroke-linejoin:round}.ax{stroke:#173236;stroke-width:1;opacity:.35}.lane{stroke:#173236;stroke-width:1.5;stroke-dasharray:3 3}</style>
+<line class="lane" x1="195.0" y1="37" x2="195.0" y2="90"/>
+<line class="lane" x1="300.0" y1="106" x2="300.0" y2="159"/>
+<line class="lane" x1="510.0" y1="175" x2="510.0" y2="228"/>
+<rect x="90" y="8" width="12" height="12" rx="2" fill="#63B494"/><text x="108" y="18">full set, 200 iterations</text>
+<rect x="290" y="8" width="12" height="12" rx="2" fill="#173236"/><text x="308" y="18">zoom ×10⁴, 2000 iterations</text>
+<path d="M90.0 40 H177.6 Q181.6 40 181.6 44 V58 Q181.6 62 177.6 62 H90.0 Z" fill="#63B494"/>
+<text class="v halo" x="186.6" y="56">×3.5</text>
+<path d="M90.0 65 H163.2 Q167.2 65 167.2 69 V83 Q167.2 87 163.2 87 H90.0 Z" fill="#173236"/>
+<text class="v halo" x="172.2" y="81">×2.9</text>
+<text x="82" y="64" text-anchor="end">SSE4.2</text>
+<text class="v" x="82" y="78" text-anchor="end">4 lanes</text>
+<path d="M90.0 109 H317.3 Q321.3 109 321.3 113 V127 Q321.3 131 317.3 131 H90.0 Z" fill="#63B494"/>
+<text class="v halo" x="326.3" y="125">×8.8</text>
+<path d="M90.0 134 H259.5 Q263.5 134 263.5 138 V152 Q263.5 156 259.5 156 H90.0 Z" fill="#173236"/>
+<text class="v halo" x="268.5" y="150">×6.6</text>
+<text x="82" y="133" text-anchor="end">AVX2</text>
+<text class="v" x="82" y="147" text-anchor="end">8 lanes</text>
+<path d="M90.0 178 H431.7 Q435.7 178 435.7 182 V196 Q435.7 200 431.7 200 H90.0 Z" fill="#63B494"/>
+<text class="v halo" x="440.7" y="194">×13.2</text>
+<path d="M90.0 203 H309.6 Q313.6 203 313.6 207 V221 Q313.6 225 309.6 225 H90.0 Z" fill="#173236"/>
+<text class="v halo" x="318.6" y="219">×8.5</text>
+<text x="82" y="202" text-anchor="end">AVX-512</text>
+<text class="v" x="82" y="216" text-anchor="end">16 lanes</text>
+<line class="ax" x1="90.0" y1="233" x2="90.0" y2="237"/><text class="v" x="90.0" y="250" text-anchor="middle">0</text>
+<line class="ax" x1="195.0" y1="233" x2="195.0" y2="237"/><text class="v" x="195.0" y="250" text-anchor="middle">4</text>
+<line class="ax" x1="300.0" y1="233" x2="300.0" y2="237"/><text class="v" x="300.0" y="250" text-anchor="middle">8</text>
+<line class="ax" x1="405.0" y1="233" x2="405.0" y2="237"/><text class="v" x="405.0" y="250" text-anchor="middle">12</text>
+<line class="ax" x1="510.0" y1="233" x2="510.0" y2="237"/><text class="v" x="510.0" y="250" text-anchor="middle">16</text>
+<line class="ax" x1="90.0" y1="36" x2="90.0" y2="233"/>
+<text class="v" x="510.0" y="267" text-anchor="end">speedup over std::complex, dashed: number of lanes</text>
+</svg>

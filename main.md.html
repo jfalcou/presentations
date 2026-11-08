@@ -1,0 +1,1417 @@
+<!------------------------------------------------------------------------------------------------->
+<!--
+  Copyright 2026 Joel Falcou
+  Licensed under the terms of the Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)
+-->
+<!------------------------------------------------------------------------------------------------->
+
+<meta charset="utf-8" lang="en">
+<!------------------------------------------------------------------------------------------------->
+
+**std::complex Ate My Performances! | Making Faster Hyper-complex Maths**
+<br>
+<small><em>Meeting C++ 2026</em></small>
+<br>
+Joel FALCOU
+<br>
+<small>With the help of Jean-Thierry LAPRESTÉ, Alexis AUNE, and Adrien HENROT</small>
+<br>
+<center><small>![](images/lisn.svg style="height: 3rem")&nbsp;&nbsp;&nbsp;![](images/codereckons.png style="height: 3rem")</small></center>
+<center>![](images/ccby40.png style="height: 0.7rem")</center>
+<small><small>Powered by Markdeep and Markdeep-Slides</small></small>
+
+---
+
+# Complex arithmetic in C++
+
+---
+
+## Hypercomplex numbers in computing
+
+<div class="cols"><div class="col small">
+
+### Complex numbers
+  * Signal processing: FFT, filters, convolution.
+    * J. Cooley, J. Tukey, [*Complex Fourier series*](https://doi.org/10.1090/S0025-5718-1965-0178586-1), Math. Comp. 19, 1965.
+  * Wave physics: electromagnetics, acoustics, quantum mechanics.
+    * E. Schrödinger, [*Eigenwertproblem*](https://doi.org/10.1002/andp.19263861802), Ann. Phys. 386, 1926.
+
+### Quaternions and octonions
+  * Quaternions: rotations in graphics, robotics, attitude control.
+    * K. Shoemake, [*Quaternion curves*](https://doi.org/10.1145/325165.325242), SIGGRAPH 1985.
+  * Octonions: theoretical physics.
+    * J. Baez, [*The Octonions*](https://doi.org/10.1090/S0273-0979-01-00934-X), Bull. AMS 39, 2002.
+
+</div><div class="col" style="flex: 0.5">
+
+<div class="imgrow stack">
+<figure><img src="images/complex-plane.svg"><figcaption>$z = a + bi$ in the plane</figcaption></figure>
+<figure><img src="images/rotation.svg"><figcaption>Rotation by a unit quaternion</figcaption></figure>
+</div>
+
+
+</div></div>
+
+---
+
+## Hypercomplex types in C++
+
+### Types and headers
+
+<div class="tiny">
+
+| Library          | Version        | Type                                   | Header                              |
+|------------------|----------------|----------------------------------------|-------------------------------------|
+| Standard library | C++98          | `std::complex&lt;T&gt;`                | `&lt;complex&gt;`                   |
+| Boost.Math       | 1.92           | `boost::math::quaternion&lt;T&gt;`     | `&lt;boost/math/quaternion.hpp&gt;` |
+| Boost.Math       | 1.92           | `boost::math::octonion&lt;T&gt;`       | `&lt;boost/math/octonion.hpp&gt;`   |
+| Eigen            | 5.0.1          | `Eigen::Quaternion&lt;T&gt;`           | `&lt;Eigen/Geometry&gt;`            |
+| GLM              | 1.0.3          | `glm::quat`                            | `&lt;glm/gtc/quaternion.hpp&gt;`    |
+| DirectXMath      | jun2026        | `XMVECTOR`, `XMQuaternion*`            | `&lt;DirectXMath.h&gt;`             |
+| Apple simd       | iOS 27 SDK     | `simd_quatf`                           | `&lt;simd/quaternion.h&gt;`         |
+| Bullet           | 3.25           | `btQuaternion`                         | `&lt;LinearMath/btQuaternion.h&gt;` |
+| ROS 2 tf2        | Lyrical        | `tf2::Quaternion`                      | `&lt;tf2/LinearMath/Quaternion.hpp&gt;` |
+
+</div>
+
+  * `std::complex`: the only hypercomplex type of the standard library, since C++98.
+  * Every other library: its own type, its own functions.
+
+
+---
+
+## Reference kernels
+
+<div class="cols"><div class="col">
+
+### Complex Level 1 BLAS
+  * `caxpy`: $y \leftarrow \alpha x + y$.
+  * `cdotc`: $\sum_i \overline{x_i}\, y_i$.
+
+### Transcendental kernel
+  * `exp`, element by element.
+  * Inputs in $[0, 1)$, none subnormal.
+
+</div><div class="col wide small">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+using cvec = std::vector<std::complex<float>>;
+
+void caxpy(std::complex<float> a, cvec const& x, cvec& y)
+{
+  for (std::size_t i = 0; i < x.size(); ++i)
+    y[i] = a * x[i] + y[i];
+}
+
+std::complex<float> cdotc(cvec const& x, cvec const& y)
+{
+  std::complex<float> s{};
+  for (std::size_t i = 0; i < x.size(); ++i)
+    s += std::conj(x[i]) * y[i];
+  return s;
+}
+
+void cexp(cvec const& x, cvec& y)
+{
+  for (std::size_t i = 0; i < x.size(); ++i)
+    y[i] = std::exp(x[i]);
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div></div>
+
+---
+
+## Constraints of std::complex
+
+### Value type, layout, and product ([complex.numbers.general](https://eel.is/c++draft/complex.numbers.general))
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// Value type: a floating-point type, anything else is unspecified (p2)
+std::complex<float> z{1.f, 2.f};
+
+// No register of values: std::complex<eve::wide<float>> is unspecified
+// std::complex<eve::wide<float>> w;
+
+// Layout: T[2] (p4), so an array of std::complex interleaves the parts
+auto& parts = reinterpret_cast<float(&)[2]>(z);
+
+// Product (C Annex G): libstdc++ and libc++ test the result for NaN, then call __mulsc3.
+// MSVC computes the plain formula, without the test.
+// With GCC, caxpy stays scalar: 4.3 to 6.2 times slower than with -fcx-limited-range.
+z = z * z;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<div class="small">
+
+  * [`-fcx-limited-range`](https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#index-fcx-limited-range): no NaN test, enabled by `-ffast-math`.
+  * Code generation: g++ 15.1, clang 20.1 with libstdc++ and libc++, MSVC 19, on Compiler Explorer.
+
+</div>
+
+---
+
+## Outline
+
+<div class="cols top big airy outline"><div class="col">
+
+  * **The Cayley-Dickson algebras.**
+    * $\mathbb{C}$, $\mathbb{H}$, $\mathbb{O}$, $\mathbb{S}$ as pairs.
+    * The properties lost at each step.
+  * **Introducing kyosu.**
+    * One type for every dimension.
+    * Two hundred functions, with options.
+  * **From algebras to tuples.**
+    * kumi tuples as the storage.
+    * The product as a recursion on halves.
+
+</div><div class="col">
+
+  * **SIMD support.**
+    * EVE registers of complex numbers.
+    * kyosu against `std::simd`.
+  * **Benchmarks and live demo.**
+    * From SSE4.2 to AVX-512.
+    * The Mandelbrot set, live.
+
+</div></div>
+
+---
+
+# Cayley-Dickson algebras
+
+---
+
+## Cayley-Dickson doubling
+
+### Pairs of the previous algebra
+  * Hamilton, 1837: $\mathbb{C}$ as pairs of reals.
+  * Dickson, 1919: pairs over any algebra with a conjugation<sup>†</sup>.
+
+$$ (a,b)(c,d) = \left(ac - \overline{d}b,\, da + b\overline{c}\right), \qquad \overline{(a,b)} = \left(\overline{a}, -b\right) $$
+
+<div class="small">
+
+| Algebra      | Dimension | Element                                 | Pairs of        |
+|:------------:|:---------:|-----------------------------------------|:---------------:|
+| $\mathbb{R}$ | 1         | $a$                                     |                 |
+| $\mathbb{C}$ | 2         | $a + bi$                                | $\mathbb{R}$    |
+| $\mathbb{H}$ | 4         | $a + bi + cj + dk$                      | $\mathbb{C}$    |
+| $\mathbb{O}$ | 8         | $x_0 + x_1e_1 + \cdots + x_7e_7$        | $\mathbb{H}$    |
+| $\mathbb{S}$ | 16        | $x_0 + x_1e_1 + \cdots + x_{15}e_{15}$  | $\mathbb{O}$    |
+
+</div>
+
+<div class="note"><sup>†</sup> Sign conventions vary across the literature.</div>
+
+---
+
+## Properties of the algebras
+
+### Properties lost
+
+<div class="small">
+
+| Dimension | Algebra      | Lost                                  | Lost in code                    |
+|:---------:|:------------:|---------------------------------------|---------------------------------|
+| 2         | $\mathbb{C}$ | order                                 | `operator&lt;`                  |
+| 4         | $\mathbb{H}$ | commutativity                         | `a * b == b * a`                |
+| 8         | $\mathbb{O}$ | associativity                         | `(a * b) * c == a * (b * c)`    |
+| 16        | $\mathbb{S}$ | alternativity, multiplicative norm, division | `abs(a * b) == abs(a) * abs(b)` |
+
+</div>
+
+  * Bott and Milnor, Kervaire, 1958: a real division algebra has dimension 1, 2, 4, or 8.
+
+---
+
+# Introducing kyosu
+
+---
+
+## kyosu
+
+<div class="airy">
+
+<div class="cols top"><div class="col">
+
+### Purpose
+  * One type for every Cayley-Dickson algebra.
+    * Complex numbers, quaternions, octonions.
+    * Any dimension $2^n$.
+    * Over `float` and `double`.
+  * Exhaustive function set.
+    * Named after their real counterparts.
+    * On a scalar or an `eve::wide` register.
+
+</div><div class="col">
+
+### Availability
+  * Header-only C++20, BSL-1.0.
+    * g++ 13 or clang++ 16, or above.
+    * Dependency: [EVE](https://github.com/jfalcou/eve).
+  * Sources: [github.com/jfalcou/kyosu](https://github.com/jfalcou/kyosu).
+  * Documentation: [jfalcou.github.io/kyosu](https://jfalcou.github.io/kyosu).
+
+</div></div>
+
+</div>
+
+---
+
+## One name for every dimension
+
+### Generic functions
+  * One function object for every algebra.
+  * The result is properly typed.
+
+<div class="dense">
+
+<span class="godbolt-full" data-src="code/snippets/sqr_every_dimension.cpp" data-hex="23696e636c756465203c696f73747265616d3e0a23696e636c756465203c6b796f73752f6b796f73752e6870703e0a0a696e74206d61696e28290a7b0a20207573696e67206b796f73753a3a7371723b0a0a20202f2f204f6e65206e616d652c207768617465766572207468652064696d656e73696f6e206f662074686520617267756d656e742e0a20207374643a3a636f7574203c3c2022636f6d706c65783a2020202022203c3c20737172286b796f73753a3a636f6d706c65785f743c646f75626c653e28312e2c20322e29292020202020202020202020203c3c20225c6e223b0a20207374643a3a636f7574203c3c20227175617465726e696f6e3a2022203c3c20737172286b796f73753a3a7175617465726e696f6e5f743c646f75626c653e28312e2c20322e2c20332e2c20342e2929203c3c20225c6e223b0a20207374643a3a636f7574203c3c20226f63746f6e696f6e3a20202022203c3c20737172286b796f73753a3a6f63746f6e696f6e5f743c646f75626c653e28312e2c20322e2c20332e2c20342e2c20352e2c20362e2c20372e2c20382e2929203c3c20225c6e223b0a7d"></span>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+#include <iostream>
+#include <kyosu/kyosu.hpp>
+
+int main()
+{
+  using kyosu::sqr;
+
+  std::cout << "complex:    " << sqr(kyosu::complex_t<double>(1., 2.))            << "\n";
+  std::cout << "quaternion: " << sqr(kyosu::quaternion_t<double>(1., 2., 3., 4.)) << "\n";
+  std::cout << "octonion:   " << sqr(kyosu::octonion_t<double>(1., 2., 3., 4., 5., 6., 7., 8.)) << "\n";
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<div class="output">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+complex:    -3 + 4i
+quaternion: -28 + 4i + 6j + 8k
+octonion:   -202 + 4i + 6j + 8k + 10l + 12li + 14lj + 16lk
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+</div>
+
+---
+
+## Mixed dimensions and divisions
+
+### Promotion and divisions
+
+<div class="xsmall">
+
+<span class="godbolt-full" data-src="code/snippets/mixed_dimensions.cpp" data-hex="23696e636c756465203c696f73747265616d3e0a23696e636c756465203c6b796f73752f6b796f73752e6870703e0a0a696e74206d61696e28290a7b0a20207573696e6720715f74203d206b796f73753a3a7175617465726e696f6e5f743c646f75626c653e3b0a20206175746f2063203d206b796f73753a3a636f6d706c65785f743c646f75626c653e28312e2c20322e293b0a20206175746f2071203d20715f7428312e2c20322e2c20332e2c20342e293b0a20206175746f206f203d206b796f73753a3a6f63746f6e696f6e5f743c646f75626c653e28312e2c20322e2c20332e2c20342e2c20352e2c20362e2c20372e2c20382e293b0a0a20202f2f2044696d656e73696f6e73206d697820667265656c793a2074686520726573756c742074616b657320746865206c617267657374206f6e652e0a20207374643a3a636f7574203c3c202263202b2071203d2022203c3c2063202b2071203c3c20225c6e223b0a20207374643a3a636f7574203c3c202271202a206f203d2022203c3c2071202a206f203c3c20225c6e223b0a0a20202f2f2054686520636f6e7374616e747320666f6c6c6f772074686520616c67656272612c2077686f73652070726f6475637420646f6573206e6f7420636f6d6d7574652e0a20206175746f2069203d206b796f73753a3a69286b796f73753a3a61733c715f743e2829293b0a20206175746f206a203d206b796f73753a3a6a286b796f73753a3a61733c715f743e2829293b0a20207374643a3a636f7574203c3c202269202a206a203d2022203c3c2069202a206a203c3c20225c6e223b0a20207374643a3a636f7574203c3c20226a202a2069203d2022203c3c206a202a2069203c3c20225c6e223b0a0a20202f2f2048656e63652061206c656674206469766973696f6e2062657369646520746865207269676874206f6e652e0a20207374643a3a636f7574203c3c202271202f20632020202020203d2022203c3c2071202f20632020202020202020202020203c3c20225c6e223b0a20207374643a3a636f7574203c3c20226c64697628632c207129203d2022203c3c206b796f73753a3a6c64697628632c207129203c3c20225c6e223b0a7d"></span>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+using q_t = kyosu::quaternion_t<double>;
+auto c = kyosu::complex_t<double>(1., 2.);
+auto q = q_t(1., 2., 3., 4.);
+auto o = kyosu::octonion_t<double>(1., 2., 3., 4., 5., 6., 7., 8.);
+
+// The result takes the larger dimension
+std::cout << "c + q = " << c + q << "\n";
+std::cout << "q * o = " << q * o << "\n";
+
+// Noncommutative from the quaternions on
+auto i = kyosu::i(kyosu::as<q_t>());
+auto j = kyosu::j(kyosu::as<q_t>());
+std::cout << "i * j = " << i * j << "\n";
+std::cout << "j * i = " << j * i << "\n";
+
+// a / b returns a b^-1, the solution of x b = a, and kyosu::ldiv(a, b) returns a^-1 b, the solution of a x = b
+// Both are exact up to the octonions
+std::cout << "q / c      = " << q / c            << "\n";
+std::cout << "ldiv(c, q) = " << kyosu::ldiv(c, q) << "\n";
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<div class="output">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+c + q = 2 + 4i + 3j + 4k
+q * o = -28 + 4i + 6j + 8k - 60l + 20li + 14lj + 32lk
+i * j = 0 + 0i + 0j + 1k
+j * i = 0 + 0i + 0j - 1k
+q / c      = 1 + 0i - 1j + 2k
+ldiv(c, q) = 1 + 0i + 2.2j - 0.4k
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+</div>
+
+---
+
+## Options
+
+<div class="cols"><div class="col">
+
+### Options of kyosu
+  * `real_only`: real results only.
+  * `raw`: no edge cases.
+  * `radpi`: angles in half turns.
+  * `assume_unitary`: unit quaternions.
+
+### Syntax
+  * `f[option]`: a new function object.
+  * No `f_raw`, no `f_real_only`.
+
+</div><div class="col wide small" style="flex: 1.3">
+
+<span class="godbolt-full" data-src="code/snippets/options.cpp" data-hex="23696e636c756465203c61727261793e0a23696e636c756465203c696f73747265616d3e0a23696e636c756465203c7370616e3e0a23696e636c756465203c6b796f73752f6b796f73752e6870703e0a0a696e74206d61696e28290a7b0a20207573696e6720635f74203d206b796f73753a3a636f6d706c65785f743c646f75626c653e3b0a20206175746f2070692020203d206576653a3a7069286576653a3a61733c646f75626c653e2829293b0a20206175746f207a65726f203d20635f7428302e2c20302e292c206f6e65203d20635f7428312e2c20302e293b0a0a20202f2f204120636f6d706c657820726573756c742c206f7220746865207265616c2066756e6374696f6e20616e6420697473204e614e0a20207374643a3a636f7574203c3c206b796f73753a3a73717274282d312e3029203c3c20227c20220a2020202020202020202020203c3c206b796f73753a3a737172745b6b796f73753a3a7265616c5f6f6e6c795d282d312e3029203c3c20225c6e223b0a0a20202f2f20494545452037353420656467652063617365732c206f7220746865206261726520666f726d756c610a20207374643a3a636f7574203c3c206b796f73753a3a6c6f67287a65726f29203c3c20227c20220a2020202020202020202020203c3c206b796f73753a3a6c6f675b6b796f73753a3a7261775d287a65726f29203c3c20225c6e223b0a0a20202f2f2052616469616e732063617272792074686520726f756e64696e67206f662070692c2068616c66207475726e7320646f206e6f740a20207374643a3a636f7574203c3c206b796f73753a3a73696e28316536202a207069202a206f6e6529203c3c20227c20220a2020202020202020202020203c3c206b796f73753a3a73696e5b6b796f73753a3a72616470695d28316536202a206f6e6529203c3c20225c6e223b0a0a20202f2f204120726f746174696f6e207468617420736b69707320746865206e6f726d616c697a6174696f6e206f6620710a20207374643a3a61727261793c646f75626c652c20333e20617869737b302e2c20302e2c20312e7d2c20767b312e2c20302e2c20302e7d3b0a20206175746f2071203d206b796f73753a3a66726f6d5f616e676c655f61786973287069202f20322c207374643a3a7370616e286178697329293b0a20206175746f2077203d206b796f73753a3a726f746174655f7665635b6b796f73753a3a617373756d655f756e69746172795d28712c207374643a3a7370616e287629293b0a20207374643a3a636f7574203c3c20775b305d203c3c20222022203c3c20775b315d203c3c20222022203c3c20775b325d203c3c20225c6e223b0a7d"></span>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+using c_t = kyosu::complex_t<double>;
+auto pi   = eve::pi(eve::as<double>());
+auto zero = c_t(0., 0.), one = c_t(1., 0.);
+
+// A complex result, or the real function and its NaN
+std::cout << kyosu::sqrt(-1.0) << "| "
+          << kyosu::sqrt[kyosu::real_only](-1.0) << "\n";
+
+// IEEE 754 edge cases, or the bare formula
+std::cout << kyosu::log(zero) << "| "
+          << kyosu::log[kyosu::raw](zero) << "\n";
+
+// Radians carry the rounding of pi, half turns do not
+std::cout << kyosu::sin(1e6 * pi * one) << "| "
+          << kyosu::sin[kyosu::radpi](1e6 * one) << "\n";
+
+// A rotation that skips the normalization of q
+std::array<double, 3> axis{0., 0., 1.}, v{1., 0., 0.};
+auto q = kyosu::from_angle_axis(pi / 2, std::span(axis));
+auto w = kyosu::rotate_vec[kyosu::assume_unitary](q, std::span(v));
+std::cout << w[0] << " " << w[1] << " " << w[2] << "\n";
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<div class="output">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+0 + 1i | -nan
+-inf + 0i | -inf + nani 
+-2.23191e-10 + 0i | 0 + 0i 
+2.22045e-16 1 0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+</div></div>
+
+---
+
+## Function catalog
+
+<div class="catalog">
+<div><b>Operators</b><ul><li><code>+ - * /</code></li><li><code>kyosu::ldiv</code></li><li><code>==</code>, <code>!=</code></li><li><code>conj</code>, unary <code>-</code></li></ul></div>
+<div><b>Algebra</b><ul><li><code>abs</code>, <code>sqr_abs</code></li><li><code>rec</code>, <code>sqr</code></li><li><code>dot</code>, <code>associator</code></li><li><code>commutator</code></li></ul></div>
+<div><b>Exponentials</b><ul><li><code>exp</code>, <code>exp2</code>, <code>exp10</code></li><li><code>log</code>, <code>log2</code>, <code>log10</code></li><li><code>pow</code>, <code>sqrt</code>, <code>cbrt</code></li><li><code>expm1</code>, <code>log1p</code></li></ul></div>
+<div><b>Trigonometric</b><ul><li><code>sin</code>, <code>cos</code>, <code>tan</code></li><li><code>sec</code>, <code>csc</code>, <code>cot</code></li><li>their inverses</li><li><code>sinc</code>, <code>sincos</code></li></ul></div>
+<div><b>Hyperbolic</b><ul><li><code>sinh</code>, <code>cosh</code>, <code>tanh</code></li><li><code>sech</code>, <code>csch</code>, <code>coth</code></li><li>their inverses</li><li><code>gd</code>, <code>agd</code></li></ul></div>
+<div><b>Gamma and zeta</b><ul><li><code>tgamma</code>, <code>log_gamma</code></li><li><code>digamma</code>, <code>beta</code></li><li><code>zeta</code>, <code>eta</code></li><li><code>lambda</code>, <code>xi</code></li></ul></div>
+<div><b>Error functions</b><ul><li><code>erf</code>, <code>erfi</code></li><li><code>erfcx</code>, <code>faddeeva</code></li><li><code>exp_int</code></li><li><code>chi</code></li></ul></div>
+<div><b>Bessel and Airy</b><ul><li><code>bessel_j</code>, <code>bessel_y</code></li><li><code>bessel_i</code>, <code>bessel_k</code></li><li><code>bessel_h</code></li><li><code>airy_ai</code>, <code>airy_bi</code></li></ul></div>
+<div><b>Elliptic</b><ul><li><code>ellint_fe</code></li><li><code>ellint_rc</code> to <code>ellint_rj</code></li><li><code>am</code></li><li><code>jacobi_elliptic</code></li></ul></div>
+<div><b>Polynomials</b><ul><li><code>legendre</code></li><li><code>gegenbauer</code></li><li><code>tchebytchev</code></li><li><code>horner</code></li></ul></div>
+<div><b>Hypergeometric</b><ul><li><code>hypergeometric</code></li><li><code>kummer</code></li><li><code>tricomi</code></li><li><code>omega</code></li></ul></div>
+<div><b>Rotations</b><ul><li><code>from_angle_axis</code></li><li><code>rotate_vec</code>, <code>slerp</code></li><li><code>to_rotation_matrix</code></li><li><code>to_euler</code></li></ul></div>
+</div>
+
+---
+
+## Extension of real analytic functions
+
+<div class="cols"><div class="col small">
+
+### Motivation
+  * One complex implementation per function.
+
+### Real and pure parts
+  1. $z = z_0 + \underline{z}$, $\underline{z}$ the pure part.
+  2. $I_z = \underline{z} / |\underline{z}|$ squares to $-1$, as $i$.
+  3. $z = z_0 + |\underline{z}|\,I_z$: $z_0 + i\,|\underline{z}|$, $I_z$ for $i$.
+  4. So $z = \rho\,e^{\theta I_z}$, as in $\mathbb{C}$.
+
+### Hypotheses
+  * $f$ holomorphic, $f(\overline{w}) = \overline{f(w)}$.
+  * Slice functions: Ghiloni and Perotti, 2011.
+
+</div><div class="col wide xsmall" style="flex: 1">
+
+<span class="godbolt-full" data-src="code/snippets/extend.cpp" data-hex="23696e636c756465203c696f73747265616d3e0a23696e636c756465203c6b796f73752f6b796f73752e6870703e0a0a2f2f20662c20646566696e6564206f6e2074686520636f6d706c6578206e756d626572732c20657874656e64656420746f20616e79204361796c65792d4469636b736f6e2076616c7565207a0a6175746f20657874656e64286175746f20662c206175746f207a290a7b0a20206175746f2070203d206b796f73753a3a70757265287a293b0a20206175746f2076203d2066286b796f73753a3a636f6d706c6578286b796f73753a3a7265616c287a292c206b796f73753a3a61627328702929293b0a202072657475726e206b796f73753a3a7265616c287629202b206b796f73753a3a6970617274287629202a206b796f73753a3a7369676e2870293b0a7d0a0a696e74206d61696e28290a7b0a20206175746f2071203d206b796f73753a3a7175617465726e696f6e5f743c646f75626c653e28312e2c20322e2c20332e2c20342e293b0a20207374643a3a636f7574203c3c20657874656e64286b796f73753a3a6578702c207129203c3c20225c6e22203c3c206b796f73753a3a657870287129203c3c20225c6e223b0a7d"></span>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// f, defined on the complex numbers,
+// extended to any Cayley-Dickson value z
+auto extend(auto f, auto z)
+{
+  auto p = kyosu::pure(z);
+  auto v = f(kyosu::complex( kyosu::real(z)
+                           , kyosu::abs(p)
+                           )
+            );
+  return kyosu::real(v) + kyosu::ipart(v) * kyosu::sign(p);
+}
+
+// q = 1 + 2i + 3j + 4k
+std::cout << extend(kyosu::exp, q) << "\n" << kyosu::exp(q) << "\n";
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<div class="output">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+1.69392 - 0.78956i - 1.18434j - 1.57912k
+1.69392 - 0.78956i - 1.18434j - 1.57912k
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+</div></div>
+
+---
+
+# From algebras to tuples
+
+---
+
+## Two representations of the tower
+
+<div class="airy">
+
+<div class="cols top small"><div class="col">
+
+### Nested pairs
+  * The recursion is in the type.
+  * Example: An octonion is a pair of pairs of pairs.
+  * Component $k$: $\log_2 N$ nested members away.
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+using complex    = std::pair<float, float>;
+using quaternion = std::pair<complex, complex>;
+using octonion   = std::pair<quaternion, quaternion>;
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div><div class="col">
+
+### Flat tuple
+  * The recursion is in the algorithm.
+  * Example: An octonion is a tuple of eight reals.
+  * Component $k$: `kyosu::get&lt;k&gt;`.
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+template<eve::floating_scalar_value Type, unsigned int N>
+struct cayley_dickson
+{
+  kumi::result::fill_t<N, Type> contents;
+};
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div></div>
+
+</div>
+
+---
+
+## kumi algorithms
+
+### Heterogeneous tuple algorithms
+
+<div class="xsmall">
+
+<span class="godbolt-full" data-src="code/snippets/kumi_algorithms.cpp" data-hex="23696e636c756465203c696f73747265616d3e0a23696e636c756465203c6b756d692f6b756d692e6870703e0a0a696e74206d61696e28290a7b0a20206175746f207873203d206b756d693a3a7475706c657b312c20322e35662c20332e307d3b0a20206175746f207973203d206b756d693a3a7475706c657b2761272c2073686f72747b327d2c2034554c4c7d3b0a0a20206175746f2073756d7320203d206b756d693a3a6d6170285b5d286175746f20782c206175746f207929207b2072657475726e2078202b20793b207d2c2078732c207973293b0a20206175746f20746f74616c203d206b756d693a3a666f6c645f6c656674285b5d286175746f206163632c206175746f207629207b2072657475726e20616363202b20763b207d2c2073756d732c20302e293b0a20207374643a3a636f7574203c3c2073756d73203c3c20222022203c3c20746f74616c203c3c20225c6e223b0a0a20206175746f20726f7773203d206b756d693a3a7475706c657b6b756d693a3a7475706c657b312c202761277d2c206b756d693a3a7475706c657b322c202762277d2c206b756d693a3a7475706c657b332c202763277d7d3b0a20207374643a3a636f7574203c3c206b756d693a3a7472616e73706f736528726f777329203c3c20225c6e223b0a0a20206175746f207061697273203d206b756d693a3a63617274657369616e5f70726f64756374286b756d693a3a7475706c657b312c20327d2c206b756d693a3a7475706c657b2778272c202779277d293b0a20207374643a3a636f7574203c3c207061697273203c3c20225c6e223b0a0a20206175746f207a73203d206b756d693a3a666c617474656e286b756d693a3a7475706c657b6b756d693a3a7475706c657b312e35662c202d322e667d2c206b756d693a3a7475706c657b302e662c20342e667d7d293b0a20207374643a3a636f7574203c3c207a73203c3c20222022203c3c206b756d693a3a616c6c5f6f66287a732c205b5d286175746f207629207b2072657475726e2076203c20353b207d29203c3c20225c6e223b0a7d"></span>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+auto xs = kumi::tuple{1, 2.5f, 3.0};
+auto ys = kumi::tuple{'a', short{2}, 4ULL};
+
+// map over two tuples at once, fold_left across mixed types
+auto sums  = kumi::map([](auto x, auto y) { return x + y; }, xs, ys);
+auto total = kumi::fold_left([](auto acc, auto v) { return acc + v; }, sums, 0.);
+std::cout << sums << " " << total << "\n";
+
+// Rows into columns, and every pair of two tuples
+auto rows = kumi::tuple{ kumi::tuple{1, 'a'}, kumi::tuple{2, 'b'}
+                       , kumi::tuple{3, 'c'} };
+std::cout << kumi::transpose(rows) << "\n";
+std::cout << kumi::cartesian_product(kumi::tuple{1, 2}, kumi::tuple{'x', 'y'})
+          << "\n";
+
+// Nested tuples into one, then a predicate on every element
+auto zs = kumi::flatten(kumi::tuple{kumi::tuple{1.5f, -2.f}, kumi::tuple{0.f, 4.f}});
+std::cout << zs << " " << kumi::all_of(zs, [](auto v) { return v < 5; }) << "\n";
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<div class="output">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+( 98, 4.5, 7 ) 109.5
+( ( 1, 2, 3 ), ( a, b, c ) )
+( ( 1, x ), ( 2, x ), ( 1, y ), ( 2, y ) )
+( 1.5, -2, 0, 4 ) 1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+</div>
+
+---
+
+## kyosu::cayley_dickson
+
+### Storage and tuple protocol
+
+<div class="dense">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<eve::floating_scalar_value Type, unsigned int N>
+requires(N > 1 && std::has_single_bit(N))                         // a power of two
+struct cayley_dickson
+{
+  // ...
+  using data_type = kumi::result::fill_t<static_dimension, Type>;  // N reals, flat
+  data_type contents;
+};
+
+// The tuple protocol: for kumi and EVE, a cayley_dickson is a tuple of N reals
+template<typename T, unsigned int N>
+struct std::tuple_size<kyosu::cayley_dickson<T, N>> : std::integral_constant<std::size_t, N> {};
+
+template<typename T, unsigned int N, std::size_t I>
+struct std::tuple_element<I, kyosu::cayley_dickson<T, N>> { using type = T; };
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+---
+
+## Product by split and cat
+
+### Recursive Cayley-Dickson product
+
+<div class="xsmall">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<concepts::cayley_dickson Self, concepts::cayley_dickson Other>
+requires(dimension_v<Other> <= dimension_v<Self>)
+constexpr Self& operator*=(Self& self, Other const& other) noexcept
+{
+  if constexpr (dimension_v<Self> == 2)
+  {
+    // The end of the recursion: the complex product, on two FMA
+    auto [ra, ia] = self;
+    auto [rb, ib] = other;
+    self = as_cayley_dickson_t<Self, Other>{eve::fms(ra, rb, ib * ia), eve::fma(ra, ib, ia * rb)};
+  }
+  else if constexpr (dimension_v<Self> == dimension_v<Other>)
+  {
+    // Each operand split in halves: the pairs (a, b) and (c, d) of the doubling
+    constexpr auto sz = dimension_v<Self> / 2;
+    auto ria = kumi::split(self, kumi::index<sz>);
+    auto rib = kumi::split(other, kumi::index<sz>);
+
+    using cd_t = as_cayley_dickson_n_t<sz, Self, Other>;
+    cd_t ra{get<0>(ria)}, ia{get<1>(ria)}, rb{get<0>(rib)}, ib{get<1>(rib)};
+
+    // (a,b) x (c,d) = (a x c - conj(d) x b, d x a + b x conj(c)), each product one level down
+    self = as_cayley_dickson_t<Self, Other>{kumi::cat((ra * rb) - (conj(ib) * ia), (ib * ra) + (ia * conj(rb)))};
+  }
+  // ...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+---
+
+## Mixed dimensions
+
+### Operand of lower dimension
+
+<div class="dense">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+  else
+  {
+    // other has a lower dimension: (a, b) x c = (a x c, b x conj(c)),
+    // and the absent components of other, all zero, enter no product
+    constexpr auto sz  = dimension_v<Self> / 2;
+    auto ria = kumi::split(self, kumi::index<sz>);
+
+    using cd_t = as_cayley_dickson_n_t<sz, Self, Other>;
+    cd_t ra{get<0>(ria)}, ia{get<1>(ria)};
+
+    // as_cayley_dickson_t: the type of the larger dimension
+    self = as_cayley_dickson_t<Self, Other>{kumi::cat(ra * other, ia * conj(other))};
+  }
+
+  return self;
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+---
+
+## Algorithms on components
+
+### Componentwise operators
+
+<div class="dense">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+// No component index and no fixed dimension: the same code applies to a complex number and a sedenion
+template<concepts::cayley_dickson Z>
+constexpr auto operator-(Z const& z) noexcept
+{
+  return Z{kumi::map([](auto m) { return -m; }, z)};
+}
+
+template<concepts::cayley_dickson Self, concepts::cayley_dickson Other>
+requires(dimension_v<Other> <= dimension_v<Self>)
+constexpr auto& operator+=(Self& self, Other const& other) noexcept
+{
+  // Only the components of other: the others of self are unchanged
+  kumi::for_each_index([&]<typename I>(I, auto const& o) { get<I::value>(self) += o; }, other);
+  return self;
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+---
+
+## Implementations of functions
+
+<div class="cols top"><div class="col small">
+
+### Specific code: kyosu::sqr
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename Z, eve::callable_options O>
+constexpr auto sqr_(KYOSU_DELAY(), O const&, Z c) noexcept
+{
+  if constexpr (concepts::real<Z>) return eve::sqr(c);
+  else if constexpr (concepts::complex<Z>)
+  {
+    auto [zr, zi] = c;
+    return Z((zr - zi) * (zi + zr), 2 * zr * zi);
+  }
+  else
+  {
+    // c0^2 - |c - c0|^2 + 2 c0 (c - c0)
+    auto squares = kumi::map_index(
+      []<typename I>(I, auto const& m) {
+        constexpr auto sgn = (I::value == 0) - (I::value > 0);
+        return sgn * m * m;
+      }, c);
+    auto r = kumi::sum(squares, 0);
+    auto a = 2 * real(c);
+    real(c) = 0;
+    return r + a * c;
+  }
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div><div class="col small">
+
+### Extension: kyosu::exp
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+template<typename Z, eve::callable_options O>
+constexpr auto exp_(KYOSU_DELAY(), O const& o, Z z) noexcept
+{
+  if constexpr (concepts::real<Z>)
+  {
+    return complex(exp[kyosu::real_only][o](z));
+  }
+  else if constexpr (concepts::complex<Z>)
+  {
+    // exp(x + iy) = e^x (cos y + i sin y),
+    // then the IEEE 754 corner cases, unless raw
+    auto [rz, iz] = z;
+    auto r        = kyosu::exp[real_only][o](rz);
+    auto [s, c]   = eve::sincos[o](iz);
+    return Z(r * c, r * s);
+  }
+  // Quaternions and above: the complex exp, extended
+  else return _::cayley_extend(kyosu::exp[o], z);
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div></div>
+
+---
+
+# SIMD support
+
+---
+
+## Registers of complex numbers
+
+<div class="cols top dense"><div class="col dense">
+
+### EVE
+  * C++20 SIMD types, functions, algorithms.
+    * See: [github.com/jfalcou/eve](https://github.com/jfalcou/eve).
+  * Instruction sets:
+    * x86: SSE2 to AVX-512.
+    * ARM: NEON, ASIMD, SVE of fixed size.
+    * PowerPC: VMX, VSX, in progress.
+  * `eve::wide&lt;T&gt;`: a SIMD register of `T` values.
+    * The operators of `T`, and masks for branches.
+    * The register width of the target.
+
+</div><div class="col wide xsmall" style="flex: 1.2">
+
+<div class="small" style="font-size: 140%">
+
+### eve::wide of kyosu::complex_t
+  * Every kyosu function applies to each lane.
+  * The source differs from the scalar one by its types only.
+
+</div>
+
+<span class="godbolt-full" data-src="code/snippets/registers.cpp" data-hex="23696e636c756465203c696f73747265616d3e0a23696e636c756465203c6b796f73752f6b796f73752e6870703e0a0a696e74206d61696e28290a7b0a20206576653a3a776964653c646f75626c653e207265203d205b5d286175746f20692c206175746f29207b2072657475726e20312e30202b20693b207d3b0a20206576653a3a776964653c646f75626c653e20696d203d205b5d286175746f20692c206175746f29207b2072657475726e20302e35202a20693b207d3b0a0a20206576653a3a776964653c6b796f73753a3a636f6d706c65785f743c646f75626c653e3e207a203d206b796f73753a3a636f6d706c65782872652c20696d293b0a0a20207374643a3a636f7574203c3c20227a2020202020203d2022203c3c207a202020202020202020202020203c3c20225c6e223b0a20207374643a3a636f7574203c3c2022616273287a29203d2022203c3c206b796f73753a3a616273287a29203c3c20225c6e223b0a20207374643a3a636f7574203c3c2022657870287a29203d2022203c3c206b796f73753a3a657870287a29203c3c20225c6e223b0a7d"></span>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+eve::wide<double> re = [](auto i, auto) { return 1.0 + i; };
+eve::wide<double> im = [](auto i, auto) { return 0.5 * i; };
+
+eve::wide<kyosu::complex_t<double>> z
+  = kyosu::complex(re, im);
+
+std::cout << "z      = " << z             << "\n";
+std::cout << "abs(z) = " << kyosu::abs(z) << "\n";
+std::cout << "exp(z) = " << kyosu::exp(z) << "\n";
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<div class="output">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+z      = (1 + 0i , 2 + 0.5i , 3 + 1i , 4 + 1.5i )
+abs(z) = (1, 2.06155, 3.16228, 4.272)
+exp(z) = (2.71828 + 0i , 6.48451 + 3.5425i , 10.8523 + 16.9014i , 3.86212 + 54.4614i )
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+</div></div>
+
+---
+
+## Register of a tuple
+
+### Layout of eve::wide
+  * For a tuple-like `T`: one register per element of `T`.
+  * `std::complex&lt;float&gt;[4]` interleaves the parts.
+  * `eve::wide&lt;kyosu::complex_t&lt;float&gt;&gt;`.
+    * One register of real parts.
+    * One register of imaginary parts.
+
+<script type="preformatted">
+*********************************************
+* std::complex<float>[4]                    *
+* +----+----+----+----+----+----+----+----+ *
+* | r0 | i0 | r1 | i1 | r2 | i2 | r3 | i3 | *
+* +----+----+----+----+----+----+----+----+ *
+*                                           *
+* eve::wide<kyosu::complex_t<float>>        *
+* +----+----+----+----+                     *
+* | r0 | r1 | r2 | r3 |                     *
+* +----+----+----+----+                     *
+* | i0 | i1 | i2 | i3 |                     *
+* +----+----+----+----+                     *
+*********************************************
+</script>
+
+---
+
+## kyosu and std::simd
+
+<div class="cols top"><div class="col">
+
+### std::simd ([P2663R7](https://wg21.link/p2663r7))
+  * `std::simd::vec&lt;std::complex&lt;float&gt;&gt;`.
+  * Parts interleaved in adjacent lanes.
+    * Loads `std::complex` arrays as they are.
+  * The functions of `&lt;complex&gt;`.
+  * Complex instructions where they exist.
+    * AVX512-FP16, Neon v8.3.
+
+</div><div class="col">
+
+### kyosu (C++20)
+  * `eve::wide&lt;kyosu::complex_t&lt;float&gt;&gt;`.
+  * One register per part.
+    * No permute, a deinterleave on load.
+  * Every dimension, two hundred functions.
+  * Every target of EVE.
+    * x86, ARM, PowerPC.
+
+</div></div>
+
+### Status of std::simd, November 2026
+  * P2663R7: in the C++26 draft since the Hagenberg meeting, February 2025.
+  * libstdc++ 16: `std::simd`, experimental, without `std::complex` lanes.
+  * libc++: no `std::simd` yet ([#118384](https://github.com/llvm/llvm-project/issues/118384), [#127882](https://github.com/llvm/llvm-project/issues/127882)).
+
+---
+
+## One source, scalar or register
+
+### Generic code
+
+<div class="dense">
+
+<span class="godbolt-full" data-src="code/snippets/energy.cpp" data-hex="23696e636c756465203c696f73747265616d3e0a23696e636c756465203c6b796f73752f6b796f73752e6870703e0a0a6175746f20656e65726779286175746f207a290a7b0a202072657475726e206b796f73753a3a7371725f616273287a29202b206b796f73753a3a7265616c286b796f73753a3a657870287a29293b0a7d0a0a696e74206d61696e28290a7b0a20206175746f2063203d206b796f73753a3a636f6d706c65785f743c646f75626c653e28312e2c20322e293b0a20207374643a3a636f7574203c3c20656e65726779286329203c3c20225c6e223b0a0a20206576653a3a776964653c646f75626c653e207265203d205b5d286175746f20692c206175746f29207b2072657475726e20312e30202b20693b207d3b0a20207374643a3a636f7574203c3c20656e65726779286b796f73753a3a636f6d706c65782872652c2072652929203c3c20225c6e223b0a7d"></span>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+auto energy(auto z)
+{
+  return kyosu::sqr_abs(z) + kyosu::real(kyosu::exp(z));
+}
+
+int main()
+{
+  auto c = kyosu::complex_t<double>(1., 2.);
+  std::cout << energy(c) << "\n";
+
+  eve::wide<double> re = [](auto i, auto) { return 1.0 + i; };
+  std::cout << energy(kyosu::complex(re, re)) << "\n";
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<div class="output">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+3.8688
+(3.46869, 4.92507, -1.88453, -3.68773)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+</div>
+
+---
+
+## Data in memory
+
+<div class="cols top"><div class="col">
+
+### Interleaved data
+  * Common: `std::complex` arrays, FFT, files.
+  * Deinterleave, compute, interleave.
+
+</div><div class="col">
+
+### Separate arrays
+  * `eve::load` of each part, no shuffle.
+  * `eve::algo::soa_vector`: an array per part.
+
+</div></div>
+
+<div class="xsmall">
+
+<span class="godbolt-full" data-src="code/snippets/aos_load.cpp" data-hex="23696e636c756465203c636f6d706c65783e0a23696e636c756465203c696f73747265616d3e0a23696e636c756465203c766563746f723e0a23696e636c756465203c6b796f73752f6b796f73752e6870703e0a0a696e74206d61696e28290a7b0a20207573696e67207766203d206576653a3a776964653c666c6f61743e3b0a0a20207374643a3a766563746f723c7374643a3a636f6d706c65783c666c6f61743e3e20782877663a3a73697a652829293b0a2020666f7220287374643a3a73697a655f74206b203d20303b206b203c20782e73697a6528293b202b2b6b2920785b6b5d203d207b666c6f6174286b292c20312e667d3b0a0a20202f2f2078207265616420617320666c6f6174732c207468726f7567682074686520616363657373206f66205b636f6d706c65782e6e756d626572732e67656e6572616c5d2f340a2020666c6f61742a2070203d207265696e746572707265745f636173743c666c6f61742a3e28782e646174612829293b0a0a20202f2f20496e7465726c656176656420706172747320696e2c206f6e65207265676973746572207065722070617274206f75740a20206175746f205b72652c20696d5d203d206576653a3a6465696e7465726c656176655f67726f757073286576653a3a6c616e65733c313e2c206576653a3a6c6f61642870292c206576653a3a6c6f61642870202b2077663a3a73697a65282929293b0a20206175746f207a20202020202020203d206b796f73753a3a737172286b796f73753a3a636f6d706c65782872652c20696d29293b0a0a20202f2f204f6e6520726567697374657220706572207061727420696e2c20696e7465726c6561766564207061727473206f75740a20206175746f205b6c6f2c2068695d203d206576653a3a696e7465726c65617665286b796f73753a3a7265616c287a292c206b796f73753a3a696d6167287a29293b0a20206576653a3a73746f7265286c6f2c2070293b0a20206576653a3a73746f72652868692c2070202b2077663a3a73697a652829293b0a0a2020666f7220286175746f2076203a207829207374643a3a636f7574203c3c2076203c3c202720273b0a20207374643a3a636f7574203c3c20275c6e273b0a7d"></span>
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+using wf = eve::wide<float>;
+std::vector<std::complex<float>> x(wf::size());
+for (std::size_t k = 0; k < x.size(); ++k) x[k] = {float(k), 1.f};
+
+// x read as floats, through [complex.numbers.general]/4
+float* p = reinterpret_cast<float*>(x.data());
+
+// Interleaved parts in, one register per part out
+auto [re, im] = eve::deinterleave_groups(eve::lanes<1>, eve::load(p), eve::load(p + wf::size()));
+auto z        = kyosu::sqr(kyosu::complex(re, im));
+
+// One register per part in, interleaved parts out
+auto [lo, hi] = eve::interleave(kyosu::real(z), kyosu::imag(z));
+eve::store(lo, p);
+eve::store(hi, p + wf::size());
+
+for (auto v : x) std::cout << v << ' ';
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+<div class="output">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ none
+(-1,0) (0,2) (3,4) (8,6) (15,8) (24,10) (35,12) (48,14)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+</div>
+
+---
+
+# Benchmarks and live demo
+
+---
+
+## Assembly of the std::complex caxpy
+
+### GCC 15.1, -O3 -march=x86-64-v3
+
+<iframe class="ce" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:13,fontUsePx:'0',j:1,lang:c%2B%2B,source:%27%23include+%3Ccomplex%3E%0A%23include+%3Ccstddef%3E%0A%0Avoid+caxpy(std::complex%3Cfloat%3E+a,+std::complex%3Cfloat%3E+const*+x,+std::complex%3Cfloat%3E*+y,+std::size_t+n)%0A%7B%0A++for+(std::size_t+i+%3D+0%3B+i+%3C+n%3B+%2B%2Bi)%0A++++y%5Bi%5D+%3D+a+*+x%5Bi%5D+%2B+y%5Bi%5D%3B%0A%7D%27),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0')),k:42,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((h:compiler,i:(compiler:g151,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'1',intel:'0',libraryCode:'0',trim:'1',verboseDemangling:'0'),flagsViewOpen:'1',fontScale:13,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!(),options:'-O3+-std%3Dc%2B%2B20+-DNDEBUG+-march%3Dx86-64-v3',source:1),l:'5',n:'0',o:'x86-64+gcc+15.1',t:'0')),k:58,l:'4',n:'0',o:'',s:0,t:'0')),l:'2',n:'0',o:'',t:'0')),version:4"></iframe>
+
+---
+
+## Assembly of the kyosu caxpy
+
+### GCC 15.1, -O3 -march=x86-64-v3
+
+<iframe class="ce" src="https://godbolt.org/e?hideEditorToolbars=true#g:!((g:!((g:!((h:codeEditor,i:(filename:'1',fontScale:13,fontUsePx:'0',j:1,lang:c%2B%2B,source:%27%23include+%3Ckyosu/kyosu.hpp%3E%0A%23include+%3Ccstddef%3E%0A%0A//+One+array+per+part:+no+shuffle+on+load+or+store%0Avoid+caxpy(kyosu::complex_t%3Cfloat%3E+a,+float+const*+xr,+float+const*+xi,+float*+yr,+float*+yi,+std::size_t+n)%0A%7B%0A++using+wf+%3D+eve::wide%3Cfloat%3E%3B%0A++for+(std::size_t+i+%3D+0%3B+i+%2B+wf::size()+%3C%3D+n%3B+i+%2B%3D+wf::size())%0A++%7B%0A++++auto+x+%3D+kyosu::complex(eve::load(xr+%2B+i),+eve::load(xi+%2B+i))%3B%0A++++auto+y+%3D+kyosu::complex(eve::load(yr+%2B+i),+eve::load(yi+%2B+i))%3B%0A++++auto+r+%3D+a+*+x+%2B+y%3B%0A++++eve::store(kyosu::real(r),+yr+%2B+i)%3B%0A++++eve::store(kyosu::imag(r),+yi+%2B+i)%3B%0A++%7D%0A%7D%27),l:'5',n:'0',o:'C%2B%2B+source+%231',t:'0')),k:42,l:'4',n:'0',o:'',s:0,t:'0'),(g:!((h:compiler,i:(compiler:g151,filters:(b:'0',binary:'1',binaryObject:'1',commentOnly:'0',debugCalls:'1',demangle:'0',directives:'0',execute:'1',intel:'0',libraryCode:'0',trim:'1',verboseDemangling:'0'),flagsViewOpen:'1',fontScale:13,fontUsePx:'0',j:1,lang:c%2B%2B,libs:!((name:kyosu,ver:trunk),(name:eve,ver:trunk)),options:'-O3+-std%3Dc%2B%2B20+-DNDEBUG+-march%3Dx86-64-v3',source:1),l:'5',n:'0',o:'x86-64+gcc+15.1',t:'0')),k:58,l:'4',n:'0',o:'',s:0,t:'0')),l:'2',n:'0',o:'',t:'0')),version:4"></iframe>
+
+---
+
+## Timings of the reference kernels
+
+### i7-11700K, g++ 15.2, one core, 4096 elements
+
+<div class="small">
+
+| ns per element | Data | SSE4.2 | Speedup | AVX2 | Speedup | AVX-512 | Speedup |
+|---|---|--:|--:|--:|--:|--:|--:|
+| caxpy | std::complex | 1.15 | | 0.97 | | 0.97 | |
+| | kyosu, interleaved | 0.49 | ×2.3 | 0.52 | ×1.9 | 0.13 | ×7.3 |
+| | kyosu, separate parts | 0.45 | ×2.6 | 0.21 | ×4.7 | 0.14 | ×6.8 |
+| cdotc | std::complex | 0.93 | | 0.82 | | 0.82 | |
+| | kyosu, interleaved | 0.33 | ×2.8 | 0.31 | ×2.6 | 0.15 | ×5.6 |
+| | kyosu, separate parts | 0.21 | ×4.4 | 0.14 | ×5.7 | 0.14 | ×6.0 |
+| exp | std::complex | 8.78 | | 8.80 | | 8.80 | |
+| | kyosu, interleaved | 3.95 | ×2.2 | 1.90 | ×4.6 | 0.82 | ×10.7 |
+| | kyosu, separate parts | 3.69 | ×2.4 | 1.64 | ×5.4 | 0.82 | ×10.8 |
+
+</div>
+
+<div class="cols top small"><div class="col">
+
+  * Interleaved data: a deinterleave per load.
+    * caxpy on AVX2: 0.52 against 0.21.
+
+</div><div class="col">
+
+  * `-fcx-limited-range`, std::complex caxpy:
+    * 0.27, 0.17, 0.16.
+
+</div></div>
+
+---
+
+## Comparison table
+
+### Hypercomplex libraries for C++
+
+<div class="small">
+
+| | kyosu | std::complex | Boost.Math | Eigen | DirectXMath | Apple simd |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| Quaternions | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Octonions | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+| Dimension 16 and above | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+| Register of many values | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+| Special functions | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="half">≈</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+| Complex numbers | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="half">≈</span> | <span class="half">≈</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+| Exp and log of a quaternion | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="half">≈</span> | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="yes">✔</span> |
+| Layout of std::complex | <span class="half">≈</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+| In the standard | <span class="no">✘</span> | <span class="yes">✔</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> | <span class="no">✘</span> |
+
+</div>
+
+<div class="note">
+
+  * <span class="half">≈</span> Boost.Math, Eigen: complex numbers through `std::complex`.
+  * <span class="half">≈</span> Boost.Math: `exp` and no `log` of a quaternion, `sinc_pi` and `sinhc_pi` alone.
+  * <span class="half">≈</span> kyosu: the layout for a scalar, one register per part for a wide.
+
+</div>
+
+<div class="note">
+
+  * Versions: kyosu main at 8774113, Boost 1.92, Eigen 5.0.1, DirectXMath jun2026, Apple simd of the iOS 27 SDK.
+
+</div>
+
+---
+
+<div class="fullbleed">Live Demo</div>
+
+---
+
+## Escape-time kernel
+
+<div class="cols"><div class="col">
+
+### Mandelbrot set
+  * $z_{n+1} = z_n^2 + c$, from $z_0 = 0$.
+  * Repeat until $|z_n| \geq 2$, or the iteration budget.
+  * Each pixel: the iteration count of its point $c$.
+
+### Three implementations
+  * std::complex, kyosu scalar, kyosu wide.
+  * The same recurrence.
+  * The same points $c$.
+
+</div><div class="col dense">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++
+// std::complex
+while (n < v.max_iter && std::norm(z) < real_t(4))
+{
+  z = z * z + c;
+  ++n;
+}
+
+// kyosu, scalar
+while (n < v.max_iter && kyosu::sqr_abs(z) < real_t(4))
+{
+  z = kyosu::sqr(z) + c;
+  ++n;
+}
+
+// kyosu, eve::wide
+for (int i = 0; i < v.max_iter; ++i)
+{
+  auto alive = kyosu::sqr_abs(z) < real_t(4);
+  if (eve::none(alive)) break;
+  z = kyosu::sqr(z) + c;
+  n = eve::inc[alive](n);
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div></div>
+
+---
+
+## Divergent lanes
+
+### Masked escape-time loop
+
+<div class="xsmall">
+
+<script type="preformatted">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+for (int y = 0; y < h; ++y)
+{
+  wide_t const im{real_t(v.cy + (y - h / 2) * v.scale)};
+
+  for (int x = 0; x < w; x += lanes)
+  {
+    wide_t const re([&](auto i, auto) { return real_t(v.cx + (x + int(i) - w / 2) * v.scale); });
+    auto const c = kyosu::complex(re, im);
+
+    auto z = kyosu::complex(wide_t(0), wide_t(0));
+    wide_t n{0};
+
+    for (int i = 0; i < v.max_iter; ++i)
+    {
+      auto alive = kyosu::sqr_abs(z) < real_t(4);   // the lanes still iterating
+      if (eve::none(alive)) break;                  // every lane has escaped
+
+      z = kyosu::sqr(z) + c;                        // computed on every lane
+      n = eve::inc[alive](n);                       // counted on the live ones
+    }
+    // A register runs as long as its slowest lane
+
+    eve::store(n, &esc[y * stride + x]);
+  }
+}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+</script>
+
+</div>
+
+---
+
+## Mandelbrot timings
+
+### kyosu wide over std::complex, i7-11700K, g++ 15.2
+
+<center><img src="images/mandelbrot-speedup.svg" style="height: calc(var(--slide-height) * 0.5)"></center>
+
+<div class="cols top small"><div class="col">
+
+  * Full set: ×3.5, ×8.8, ×13.2.
+  * Zoom ×10⁴: ×2.9, ×6.6, ×8.5.
+  * `-fcx-limited-range`: no change.
+
+</div><div class="col">
+
+  * kyosu scalar: ×0.97 with `z * z`.
+  * ×1.31 with `sqr` and FMA.
+
+</div></div>
+
+---
+
+# Conclusion
+
+---
+
+## Conclusion
+
+<div class="cols top"><div class="col">
+
+### std::complex
+  * Interleaved parts, one value at a time.
+  * caxpy: the Annex G call keeps the loop scalar.
+  * Mandelbrot: the gain is the register.
+
+</div><div class="col">
+
+### kyosu
+  * One type, one product, every dimension.
+  * Two hundred functions, scalar or register.
+  * ×3.5 to ×13.2 on the Mandelbrot set.
+
+</div></div>
+
+### Resources
+
+<div class="small">
+
+| Project   | Content                                   | Sources                                      |
+|-----------|-------------------------------------------|----------------------------------------------|
+| kyosu     | Cayley-Dickson algebras                   | [github.com/jfalcou/kyosu](https://github.com/jfalcou/kyosu) |
+| EVE       | SIMD registers and algorithms             | [github.com/jfalcou/eve](https://github.com/jfalcou/eve) |
+| kumi      | Tuples and their algorithms               | [github.com/jfalcou/kumi](https://github.com/jfalcou/kumi) |
+| Talk      | Slides, kernels, and benchmarks           | [github.com/jfalcou/presentations](https://github.com/jfalcou/presentations/tree/meetingcpp-26) |
+
+</div>
+
+---
+
+# Questions
+
+<!------------------------------------------------------------------------------------------------->
+<!-- Compact tables, so a ten-row table fits on a slide, and two-column slides -->
+<style>
+  body .md table.table th, body .md table.table td { padding: 0.1rem 0.6rem; line-height: 1.15; }
+  .md .cols { display: flex; gap: 1.5rem; align-items: center; }
+  .md .col  { flex: 1; min-width: 0; }
+  .md .cols.top { align-items: flex-start; }
+  .md .yes { color: #2e8b57; font-weight: bold; }
+  .md .no  { color: #c0392b; font-weight: bold; }
+  .md .half { color: #e67e22; font-weight: bold; font-size: 120%; line-height: 1; -webkit-text-stroke: 0.05em currentColor; }
+  .md .col img { width: 100% !important; max-width: none !important; }
+  .md .dense { font-size: 88%; }
+  body .md .dense pre.listing { line-height: 0.85rem; }
+  .md .small { font-size: 76%; }
+  .md .tiny { font-size: 76%; }
+  body .md .tiny table.table th, body .md .tiny table.table td { padding: 0.05rem 0.6rem; }
+  body .md .small pre.listing { line-height: 0.75rem; }
+  .md .todo { border: 2px dashed #c0392b; color: #c0392b; padding: 0.3rem 0.6rem; margin-top: 0.6rem; font-size: 70%; }
+  .md .col.wide { flex: 1.6; }
+  .md .xsmall { font-size: 64%; }
+  body .md .xsmall pre.listing { line-height: 0.62rem; }
+  .md .fullbleed { width: var(--slide-width); height: var(--slide-height); margin: 0 0 0 calc(0rem - var(--side-margin));
+                   background: var(--background-color); color: var(--background-color2); display: flex;
+                   align-items: center; justify-content: center; font-family: var(--text-font);
+                   font-weight: bold; font-size: 2.5rem; }
+  .md .big { font-size: 112%; }
+  .md .catalog { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem 1.2rem; font-size: 72%; }
+  .md .catalog ul { margin: 0.1rem 0 0 0; padding-left: 1.1rem; }
+  .md .catalog li { margin: 0; line-height: 1.3; }
+  .md .catalog b { color: var(--text-color); }
+  .md iframe.ce { width: 100%; height: calc(var(--slide-height) * 0.68); border: 0; }
+  body .md .output pre.listing { background: #e6f2ec; border-left: 3px solid var(--accent-color); }
+  body .md .output.live pre.listing { border-left-color: var(--background-color2); }
+  .md .outline .col > ul > li { min-height: 5.6em; }
+  .md .doxygen-awesome-fragment-wrapper { position: relative; }
+  .md doxygen-awesome-godbolt-button { opacity: 0.3 !important; }
+  .md .doxygen-awesome-fragment-wrapper:hover doxygen-awesome-godbolt-button { opacity: 1 !important; }
+  .md .airy li { margin: 0.45rem 0; }
+  .md .airy li li { margin: 0.2rem 0; }
+  .md .note { font-size: 70%; font-style: italic; margin-top: 0.4rem; }
+  .md .imgrow { display: flex; gap: 0.8rem; align-items: flex-end; }
+  .md .imgrow figure { flex: 1; margin: 0; text-align: center; }
+  .md .imgrow.stack { flex-direction: column; align-items: center; }
+  .md .imgrow.stack img { height: calc(var(--slide-height) * 0.24); width: auto; }
+  .md .imgrow img { width: 100%; }
+  .md .imgrow figcaption { font-size: 70%; }
+  body .md div.title { font-size: 1.75rem !important; margin-top: calc(var(--slide-height) / 2 - 15rem / 2) !important; }
+</style>
+
+<!------------------------------------------------------------------------------------------------->
+<!-- Markdeep slides stuff -->
+<script>
+    markdeepSlidesOptions = {
+        aspectRatio: 16 / 9,
+        theme: 'reckons',
+        fontSize: 22,
+        diagramZoom: 1.0,
+        totalSlideNumber: true,
+        progressBar: true,
+        breakOnHeadings: false,
+        slideChangeHook: (oldSlide, newSlide) => { fitListings(); },
+        modeChangeHook: (newMode) => {}
+    };
+</script>
+<link rel="stylesheet" href="markdeep-slides/lib/markdeep-relative-sizes/1.09/relativize.css">
+<link rel="stylesheet" href="markdeep-slides/markdeep-slides.css">
+<script src="markdeep-slides/markdeep-slides.js"></script>
+
+<script>
+    // A listing wider than its box shrinks until it fits: the code font differs from one browser to the next, and a
+    // projected slide does not scroll.
+    function fitListings() {
+        document.querySelectorAll('.md pre.listing').forEach(pre => {
+            if (!pre.offsetParent) return;
+            pre.style.fontSize = '';
+            let size = parseFloat(getComputedStyle(pre).fontSize);
+            for (let step = 0; step < 25 && pre.scrollWidth > pre.clientWidth + 1; ++step) {
+                size *= 0.96;
+                pre.style.fontSize = size + 'px';
+            }
+        });
+    }
+</script>
+
+<script src="js/godbolt.js"></script>
+<script>
+    // godbolt.js of copacabana, configured for the talk. Its init() targets the fragments of a doxygen page, so
+    // the buttons are attached here, once Markdeep has built the listings: each one opens the complete program
+    // embedded before its listing.
+    function attachGodbolt() {
+        SendToGodbolt.library  = "kyosu:eve:kumi";
+        SendToGodbolt.compiler = "clang2010";
+        SendToGodbolt.option   = "-O3 -std=c++20 -DNDEBUG -march=x86-64-v3";
+        SendToGodbolt.injectCSS();
+
+        const listings = Array.from(document.querySelectorAll('.md pre.listing'));
+        document.querySelectorAll('span.godbolt-full').forEach(marker => {
+            const pre = listings.find(l => marker.compareDocumentPosition(l) & Node.DOCUMENT_POSITION_FOLLOWING);
+            if (!pre) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'doxygen-awesome-fragment-wrapper';
+            pre.parentNode.replaceChild(wrapper, pre);
+            wrapper.appendChild(pre);
+
+            // The program travels in hex: Markdeep rewrites the quotes of any text it can reach.
+            const hex = marker.dataset.hex;
+            const bytes = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < bytes.length; ++i) bytes[i] = parseInt(hex.substr(2 * i, 2), 16);
+            const source = document.createElement('pre');
+            source.className = 'fragment';
+            source.style.display = 'none';
+            source.textContent = new TextDecoder().decode(bytes);
+            wrapper.appendChild(source);
+
+            const button = document.createElement('doxygen-awesome-godbolt-button');
+            button.innerHTML = SendToGodbolt.icon;
+            button.title = SendToGodbolt.title;
+            wrapper.appendChild(button);
+        });
+
+        runLive();
+    }
+
+    // Each output block shows the run recorded on an i7-11700K until Compiler Explorer answers with a live one, which
+    // then replaces it. Without a network, the recorded run stays.
+    function runLive() {
+        const nodes = Array.from(document.querySelectorAll('.md .doxygen-awesome-fragment-wrapper, .md div.output'));
+        let wrapper = null;
+        for (const node of nodes) {
+            if (node.classList.contains('doxygen-awesome-fragment-wrapper')) { wrapper = node; continue; }
+            if (!wrapper) continue;
+
+            const output = node, source = fragmentSource(wrapper.querySelector('.fragment'));
+            wrapper = null;
+
+            const data = { "source": source,
+                           "compiler": SendToGodbolt.compiler,
+                           "options": { "userArguments": SendToGodbolt.option,
+                                        "compilerOptions": { "executorRequest": true },
+                                        "filters": { "execute": true },
+                                        "libraries": SendToGodbolt.getLibs() },
+                           "lang": "c++",
+                           "allowStoreCodeDebug": true };
+
+            postCE(SendToGodbolt.compiler, data).then((out) => {
+                if (!out || !out[0]) return;
+                const code = output.querySelector('pre.listing code') || output.querySelector('pre.listing');
+                if (!code) return;
+                code.innerHTML = out[0].replace(/<br\/>/g, '\n');
+                output.classList.add('live');
+                output.title = 'Run live on Compiler Explorer';
+            });
+        }
+    }
+</script>
+
+<!-- Markdeep stuff -->
+<script>
+    markdeepOptions = {
+        tocStyle: 'none',
+        detectMath: true,
+        onLoad: function() {
+            // Markdeep strips tags from the title, so the line break is restored here
+            var title = document.querySelector('.md div.title');
+            if (title) title.innerHTML = title.innerHTML.replace(' | ', '<br>');
+            initSlides();
+            attachGodbolt();
+            fitListings();
+            window.addEventListener('resize', fitListings);
+        }
+    };
+</script>
+<style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style>
+<script src="markdeep-slides/lib/markdeep/1.09/markdeep.min.js" charset="utf-8"></script>
+<script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

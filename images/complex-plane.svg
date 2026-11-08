@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 325 262" width="325" height="262" role="img" aria-label="A complex number z = a + bi in the plane, with its modulus rho and its argument theta" style="display:block;margin:0 auto;max-width:100%;height:auto;font-family:inherit;font-size:15px">
+  <defs>
+    <marker id="cp-ax" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
+    <marker id="cp-z" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#2a7fff"/></marker>
+  </defs>
+  <style>
+    .ax { stroke: currentColor; stroke-width: 1.3; opacity: .7 }
+    .z  { stroke: #2a7fff; stroke-width: 2.4 }
+    .proj { stroke: #2a7fff; stroke-width: 1; stroke-dasharray: 4 4; opacity: .6 }
+    .arc { fill: none; stroke: #d9480f; stroke-width: 2 }
+    text { fill: currentColor }
+    .lbl { font-style: italic }
+  </style>
+  <line class="ax" x1="30" y1="210" x2="305" y2="210" marker-end="url(#cp-ax)"/>
+  <line class="ax" x1="60" y1="245" x2="60" y2="20" marker-end="url(#cp-ax)"/>
+  <text x="290" y="232">Re</text>
+  <text x="68" y="26">Im</text>
+  <line class="proj" x1="230" y1="80" x2="230" y2="210"/>
+  <line class="proj" x1="230" y1="80" x2="60" y2="80"/>
+  <line class="z" x1="60" y1="210" x2="228" y2="81.5" marker-end="url(#cp-z)"/>
+  <circle cx="230" cy="80" r="3.5" fill="#2a7fff"/>
+  <text class="lbl" x="238" y="70" style="fill:#2a7fff">z = a + bi</text>
+  <text class="lbl" x="225" y="230">a</text>
+  <text class="lbl" x="42" y="85">b</text>
+  <text class="lbl" x="128" y="132" style="fill:#2a7fff">ρ</text>
+  <path class="arc" d="M 105 210 A 45 45 0 0 0 95.7 182.6"/>
+  <text class="lbl" x="111" y="198" style="fill:#d9480f">θ</text>
+</svg>
