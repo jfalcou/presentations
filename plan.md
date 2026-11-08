@@ -32,6 +32,7 @@ Status of each slide:
 |---|---|---|
 | Hypercomplex numbers in computing | the domains, one reference each, the complex plane and the rotation drawings | ready |
 | Hypercomplex types in C++ | type, header, and version in nine libraries | ready, each header read at its release |
+| xkcd 927 | the image alone, full screen, its credit | ready |
 | Reference kernels | caxpy, cdotc, and exp, the caxpy loop | ready, the kyosu versions to write |
 | Constraints of std::complex | value type, layout, product, in one commented listing | ready, the draft, the GCC manual, and the code generation of libstdc++, libc++, and MSVC |
 | Outline | the five parts, two lines each | ready |
@@ -74,7 +75,8 @@ Status of each slide:
 | Register of a tuple | `find_register_type`, the diagram of the two layouts | ready |
 | kyosu and std::simd | the two designs side by side, the state of std::simd | ready, P2663R7 adopted, libstdc++ 16 and libc++ checked |
 | One source, scalar or register | the product on registers, the `energy` template, its output | ready |
-| Data in memory | the deinterleave of interleaved data, separate arrays | the `soa_vector` example to write |
+| Data in memory | the deinterleave of interleaved data, separate arrays | ready, run on an i7-11700K |
+| Data in memory, soa_vector | the same computation with `eve::algo::soa_vector` and `transform_inplace` | ready, run on an i7-11700K |
 
 # Part 6: Benchmarks and live demo
 
@@ -82,6 +84,7 @@ Status of each slide:
 |---|---|---|
 | Assembly of the kyosu caxpy | the kyosu caxpy on Compiler Explorer | ready |
 | Timings of the reference kernels | std::complex and kyosu on caxpy, cdotc, and exp, three instruction sets, with speedups | measured on an i7-11700K, `code/results/kernels-i7-11700k.txt` |
+| Timings of quaternions and octonions | Boost.Math and kyosu on registers, axpy and exp, three instruction sets | measured on an i7-11700K, `code/results/hypercomplex-i7-11700k.txt` |
 | Comparison table | six libraries | ready, each cell read at its version |
 | Live Demo | the title alone, dark green on gold | the build on the laptop, a recording as fallback |
 | Escape-time kernel | the three Mandelbrot loops, the same points | ready |

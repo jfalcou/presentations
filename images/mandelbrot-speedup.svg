@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 300" width="560" height="300" role="img" aria-label="Speedup of kyosu on eve::wide over std::complex on the Mandelbrot set, per instruction set, full set and zoom, i7-11700K, g++ 15.2" style="display:block;margin:0 auto;max-width:100%;height:auto;font-family:inherit;font-size:13px">
 <style>text{fill:#173236}.v{font-size:12px}.halo{paint-order:stroke;stroke:#ffffff;stroke-width:4px;stroke-linejoin:round}.ax{stroke:#173236;stroke-width:1;opacity:.35}.lane{stroke:#173236;stroke-width:1.5;stroke-dasharray:3 3}</style>
-<line class="lane" x1="195.0" y1="37" x2="195.0" y2="90"/>
-<line class="lane" x1="300.0" y1="106" x2="300.0" y2="159"/>
-<line class="lane" x1="510.0" y1="175" x2="510.0" y2="228"/>
+<line class="lane" x1="195.0" y1="36" x2="195.0" y2="233"/>
+<line class="lane" x1="300.0" y1="36" x2="300.0" y2="233"/>
+<line class="lane" x1="510.0" y1="36" x2="510.0" y2="233"/>
 <rect x="90" y="8" width="12" height="12" rx="2" fill="#63B494"/><text x="108" y="18">full set, 200 iterations</text>
 <rect x="290" y="8" width="12" height="12" rx="2" fill="#173236"/><text x="308" y="18">zoom ×10⁴, 2000 iterations</text>
 <path d="M90.0 40 H177.6 Q181.6 40 181.6 44 V58 Q181.6 62 177.6 62 H90.0 Z" fill="#63B494"/>

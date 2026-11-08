@@ -1,0 +1,40 @@
+model name	: 11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz
+-- -march=x86-64-v2
+quaternions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       1.450          1.162            1.066
+  exp       14.941         38.482            8.912
+exp 1.42023 1.42023 1.42023
+checksum 471.818 471.818 471.818
+octonions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       6.957         12.293            4.211
+  exp       46.525         60.696           14.079
+exp 0.209003 0.209003 0.209003
+checksum 533.578 533.578 533.578
+-- -march=x86-64-v3
+quaternions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       0.701          3.055            0.682
+  exp       14.666         28.119            4.737
+exp 1.42023 1.42023 1.42023
+checksum 471.818 471.818 471.818
+octonions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       5.714         15.370            2.901
+  exp       46.284         69.528            7.924
+exp 0.209003 0.209003 0.209003
+checksum 533.578 533.578 533.578
+-- -march=x86-64-v4
+quaternions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       0.448          3.120            0.480
+  exp       14.659         31.948            3.580
+exp 1.42023 1.42023 1.42023
+checksum 471.818 471.818 471.818
+octonions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       1.967         15.349            1.955
+  exp       46.072         65.793            7.010
+exp 0.209003 0.209003 0.209003
+checksum 533.578 533.578 533.578

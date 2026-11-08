@@ -17,7 +17,7 @@ for f in snippets/*.cpp; do
     kumi_*) includes="-Ikumi/include" ;;
     *)      includes="-Ikyosu/include -Ieve/include" ;;
   esac
-  $CXX -std=c++20 -O2 -march=x86-64-v3 $includes "$f" -o "bin_$name"
+  $CXX -std=c++23 -O2 -march=x86-64-v3 $includes "$f" -o "bin_$name"
   echo
   echo "== $name"
   "./bin_$name"
@@ -33,4 +33,12 @@ for arch in x86-64-v2 x86-64-v3 x86-64-v4; do
       taskset -c "$CORE" ./reference_kernels "${size%%:*}" "${size##*:}"
     done
   done
+done
+
+# Quaternions and octonions: Boost.Math, kyosu one value at a time, kyosu on registers. Needs Boost.Math.
+for arch in x86-64-v2 x86-64-v3 x86-64-v4; do
+  $CXX -std=c++20 -O3 -DNDEBUG -march=$arch -Ikyosu/include -Ieve/include hypercomplex_kernels.cpp -o hypercomplex_kernels
+  echo
+  echo "== hypercomplex kernels, -march=$arch"
+  taskset -c "$CORE" ./hypercomplex_kernels 4096 1001
 done

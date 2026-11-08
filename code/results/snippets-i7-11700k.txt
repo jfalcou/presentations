@@ -1,4 +1,4 @@
-load 0.02 0.05 0.13
+load 14.68 13.86 13.57
 model name	: 11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz
 g++ (Debian 15.2.0-7) 15.2.0
 
@@ -19,6 +19,11 @@ g++ (Debian 15.2.0-7) 15.2.0
 ( ( 1, x ), ( 2, x ), ( 1, y ), ( 2, y ) )
 ( 1.5, -2, 0, 4 ) 1
 
+== lost_properties
+i j - j i          = 0 + 0i + 0j + 2k 
+(i j) l - i (j l)  = 0 + 0i + 0j + 0k + 0l + 0li + 0lj + 2lk 
+|x| |y|, |x y|     = 2, 0
+
 == mixed_dimensions
 c + q = 2 + 4i + 3j + 4k 
 q * o = -28 + 4i + 6j + 8k - 60l + 20li + 14lj + 32lk 
@@ -28,15 +33,19 @@ q / c      = 1 + 0i - 1j + 2k
 ldiv(c, q) = 1 + 0i + 2.2j - 0.4k 
 
 == options
-0 + 1i | -nan
--inf + 0i | -inf + nani 
--2.23191e-10 + 0i | 0 + 0i 
-2.22045e-16 1 0
+option          without             with
+real_only       0 + 1i              -nan
+raw             -inf + 0i           -inf + nani 
+radpi           -2.23191e-10 + 0i   0 + 0i 
+flat            5                   4
 
 == registers
 z      = (1 + 0i , 2 + 0.5i , 3 + 1i , 4 + 1.5i )
 abs(z) = (1, 2.06155, 3.16228, 4.272)
 exp(z) = (2.71828 + 0i , 6.48451 + 3.5425i , 10.8523 + 16.9014i , 3.86212 + 54.4614i )
+
+== soa_vector
+-1 + 0i  0 + 2i  3 + 4i  8 + 6i  15 + 8i  24 + 10i  35 + 12i  48 + 14i  
 
 == sqr_every_dimension
 complex:    -3 + 4i 
@@ -46,107 +55,149 @@ octonion:   -202 + 4i + 6j + 8k + 10l + 12li + 14lj + 16lk
 == reference kernels, -march=x86-64-v2 
 n = 4096, median of 1001 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         1.151               0.492                  0.473
-  cdotc         0.927               0.333                  0.209
-  exp           8.810               3.940                  3.694
+  caxpy         2.536               1.098                  0.861
+  cdotc         2.120               0.723                  0.433
+  exp          19.013               8.815                  8.305
 exp 2.41658 0 | 2.41658 0
 checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
 
 == reference kernels, -march=x86-64-v2 
 n = 1048576, median of 101 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         1.053               0.532                  0.388
-  cdotc         0.962               0.448                  0.318
-  exp           8.786               3.935                  3.688
+  caxpy         2.350               1.303                  1.123
+  cdotc         2.120               1.046                  0.807
+  exp          19.198               8.855                  8.469
 exp 1.97326 1.39503 | 1.97326 1.39503
 checksum 3.31905e+09 -1.63855e+09 6.59349e+09 6.59349e+09 93.6723
 
 == reference kernels, -march=x86-64-v2 -fcx-limited-range
 n = 4096, median of 1001 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.269               0.495                  0.465
-  cdotc         0.822               0.329                  0.209
-  exp           8.774               3.974                  3.739
+  caxpy         0.750               1.172                  0.901
+  cdotc         1.308               0.801                  0.500
+  exp          19.531               8.910                  8.350
 exp 2.41658 0 | 2.41658 0
 checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
 
 == reference kernels, -march=x86-64-v2 -fcx-limited-range
 n = 1048576, median of 101 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.424               0.523                  0.385
-  cdotc         0.851               0.438                  0.305
-  exp           8.810               3.934                  3.686
+  caxpy         1.204               1.457                  1.267
+  cdotc         1.448               1.133                  0.949
+  exp          21.625               9.092                  8.652
 exp 1.97326 1.39503 | 1.97326 1.39503
 checksum 3.31905e+09 -1.63855e+09 6.59349e+09 6.59349e+09 93.6723
 
 == reference kernels, -march=x86-64-v3 
 n = 4096, median of 1001 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.974               0.519                  0.206
-  cdotc         0.822               0.312                  0.142
-  exp           8.799               1.903                  1.655
+  caxpy         2.506               0.922                  0.420
+  cdotc         2.083               0.530                  0.287
+  exp          20.171               4.186                  3.700
 exp 2.41658 0 | 2.41658 0
 checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
 
 == reference kernels, -march=x86-64-v3 
 n = 1048576, median of 101 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.898               0.586                  0.302
-  cdotc         0.858               0.408                  0.258
-  exp           8.809               1.901                  1.589
+  caxpy         2.412               1.464                  1.105
+  cdotc         2.083               1.046                  0.813
+  exp          20.088               4.525                  3.748
 exp 1.97326 1.39503 | 1.97326 1.39503
 checksum 3.31905e+09 -1.63855e+09 6.59375e+09 6.59375e+09 93.6723
 
 == reference kernels, -march=x86-64-v3 -fcx-limited-range
 n = 4096, median of 1001 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.168               0.521                  0.324
-  cdotc         0.838               0.312                  0.142
-  exp           8.807               1.901                  1.656
+  caxpy         0.421               1.148                  0.384
+  cdotc         1.421               0.631                  0.278
+  exp          21.317               4.693                  4.204
 exp 2.41658 0 | 2.41658 0
 checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
 
 == reference kernels, -march=x86-64-v3 -fcx-limited-range
 n = 1048576, median of 101 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.352               0.584                  0.303
-  cdotc         0.874               0.409                  0.260
-  exp           8.809               1.904                  1.592
+  caxpy         1.137               1.434                  0.990
+  cdotc         1.635               1.017                  0.752
+  exp          19.548               4.474                  3.696
 exp 1.97326 1.39503 | 1.97326 1.39503
 checksum 3.31905e+09 -1.63855e+09 6.59375e+09 6.59375e+09 93.6723
 
 == reference kernels, -march=x86-64-v4 
 n = 4096, median of 1001 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.974               0.133                  0.141
-  cdotc         0.822               0.149                  0.136
-  exp           8.922               0.823                  0.832
+  caxpy         2.474               0.282                  0.292
+  cdotc         1.982               0.263                  0.245
+  exp          20.012               1.675                  1.736
 exp 2.41658 0 | 2.41658 0
 checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
 
 == reference kernels, -march=x86-64-v4 
 n = 1048576, median of 101 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.902               0.309                  0.295
-  cdotc         0.862               0.266                  0.239
-  exp           8.819               0.842                  0.793
+  caxpy         2.314               1.089                  1.061
+  cdotc         1.971               0.926                  0.749
+  exp          20.154               2.007                  1.761
 exp 1.97326 1.39503 | 1.97326 1.39503
 checksum 3.31905e+09 -1.63855e+09 6.59359e+09 6.59359e+09 93.6723
 
 == reference kernels, -march=x86-64-v4 -fcx-limited-range
 n = 4096, median of 1001 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.158               0.133                  0.143
-  cdotc         0.898               0.149                  0.136
-  exp           8.800               0.820                  0.820
+  caxpy         0.350               0.272                  0.293
+  cdotc         1.254               0.258                  0.243
+  exp          18.999               1.630                  1.666
 exp 2.41658 0 | 2.41658 0
 checksum 1.2357e+09 -6.1704e+08 2.4697e+09 2.4697e+09 743.907
 
 == reference kernels, -march=x86-64-v4 -fcx-limited-range
 n = 1048576, median of 101 runs, ns per element
          std::complex  kyosu, interleaved  kyosu, separate parts
-  caxpy         0.301               0.316                  0.288
-  cdotc         0.879               0.270                  0.239
-  exp           8.809               0.846                  0.781
+  caxpy         1.159               1.083                  1.030
+  cdotc         1.492               0.812                  0.743
+  exp          19.261               1.930                  1.737
 exp 1.97326 1.39503 | 1.97326 1.39503
 checksum 3.31905e+09 -1.63855e+09 6.59359e+09 6.59359e+09 93.6723
+
+== hypercomplex kernels, -march=x86-64-v2
+quaternions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       3.591          3.171            2.592
+  exp       28.784         75.148           18.324
+exp 1.42023 1.42023 1.42023
+checksum 471.818 471.818 471.818
+octonions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy      14.448         30.410            9.791
+  exp       78.121        142.240           31.244
+exp 0.209003 0.209003 0.209003
+checksum 533.578 533.578 533.578
+
+== hypercomplex kernels, -march=x86-64-v3
+quaternions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       1.582          6.899            1.411
+  exp       28.260         60.699            8.141
+exp 1.42023 1.42023 1.42023
+checksum 471.818 471.818 471.818
+octonions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy      10.349         33.487            6.570
+  exp       77.554        141.892           14.691
+exp 0.209003 0.209003 0.209003
+checksum 533.578 533.578 533.578
+
+== hypercomplex kernels, -march=x86-64-v4
+quaternions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       1.089          8.558            0.984
+  exp       33.690         74.646            6.854
+exp 1.42023 1.42023 1.42023
+checksum 471.818 471.818 471.818
+octonions, n = 4096, median of 1001 runs, ns per element
+         Boost.Math  kyosu, scalar  kyosu, register
+  axpy       4.793         33.045            4.185
+  exp       76.709        155.711           13.185
+exp 0.209003 0.209003 0.209003
+checksum 533.578 533.578 533.578
